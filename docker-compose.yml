@@ -1,0 +1,21 @@
+services:
+  # service for postgres database
+  db:
+    image: postgres
+    restart: always
+    ports: 
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+    # this ensures data doesn't disappear when the image is stopped
+      - postgres_data:/var/lib/postgresql
+      - type: tmpfs
+        target: /dev/shm
+        tmpfs:
+          size: 134217728
+
+volumes:
+  postgres_data:
