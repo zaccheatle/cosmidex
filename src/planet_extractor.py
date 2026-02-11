@@ -15,37 +15,54 @@ from astropy.io.votable import parse
 # Function to buld TAP query
 def build_query(
     base_url: str,
-    table_name: str,
     format: Literal["csv", "json", "tsv", "VOTable"],
+    table_name: str | None = None,
     columns: list[str] = ["*"],
+    custom_query: str | None = None,
 ) -> Any | None:
     """
-    Docstring for build_query
+    Function to build dynamic queries to programmatically retrieve data from NASA's Exoplanet Archive TAP service.
+    Supports both simple table queries and custom ADQL queries for metadata or complex filtering.
 
-    :param base_url: Description
-    :type base_url: str
-    :param table_name: Description
-    :type table_name: str
-    :param format: Description
-    :type format: Literal["csv", "json", "tsv", "VOTable"]
-    :param columns: Description
-    :type columns: list[str]
-    :return: Description
-    :rtype: Any | None
+    Args:
+        base_url: TAP service endpoint URL
+        format: Response format (json, csv, tsv, or votable)
+        table_name: Table to query (e.g., 'ps' for Planetary Systems). Optional if custom_query is provided.
+        columns: List of column names to select. Default is ["*"] for all columns.
+        custom_query: Full ADQL query string. If provided, overrides table_name and columns.
+
+    Returns:
+        Parsed data in format-specific type:
+        - json: dict or list
+        - csv/tsv: pandas DataFrame
+        - votable: astropy Table
+
+    Raises:
+        ValueError: If neither table_name nor custom_query is provided
+        requests.HTTPError: If the API request fails
+
+    Examples:
+    >>> # Simple query
+    >>> data = build_query(url, "json", table_name="ps")
+
+    >>> # Metadata query
+    >>> schemas = build_query(url, "json",
+    ...     custom_query="SELECT schema_name FROM TAP_SCHEMA.schemas")
+
     """
 
     if not base_url:
         raise ValueError("base_url is missing!")
-    elif not table_name:
-        raise ValueError("table_name is missing!")
-    elif base_url and table_name:
-        # Build SQL query
-        cols = ", ".join(columns) if columns != ["*"] else "*"
-        query = f"SELECT {cols} FROM {table_name}"
+    elif base_url:
+        if custom_query:
+            query = custom_query
+        elif table_name:
+            cols = ", ".join(columns) if columns != ["*"] else "*"
+            query = f"SELECT {cols} FROM {table_name}"
+        else:
+            raise ValueError("Either table_name or custom_query must be provided!")
 
-        # Make request with parameters
         params = {"query": query, "format": format}
-
         response = requests.get(base_url, params=params)
         if response:
             logging.info("Response successfull, processing..")
@@ -54,7 +71,10 @@ def build_query(
                     return response.json()
 
                 elif format == "csv":
-                    return pd.read_csv(StringIO(response.text))
+                    data = pd.read_csv(StringIO(response.text))
+                    data.to_csv("tests/debug/output.csv")
+                    logging.debug(f"file {data} saved to folder successfully!")
+                    return data
 
                 elif format == "tsv":
                     return pd.read_csv(StringIO(response.text), sep="\t")
