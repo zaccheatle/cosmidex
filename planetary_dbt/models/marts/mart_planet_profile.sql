@@ -98,9 +98,9 @@ descriptions AS (
             WHEN planet_radius_earth BETWEEN 0.8 AND 1.2
                 THEN 'Earth sized'
             WHEN planet_radius_earth < 1.75
-                THEN 'Larger than Earth — no solar system equivalent'
+                THEN 'Larger than Earth (no solar system equivalent)'
             WHEN planet_radius_earth < 3.86
-                THEN 'Sub-Neptune — smaller than Uranus'
+                THEN 'Sub-Neptune (smaller than Uranus)'
             WHEN planet_radius_earth < 9.14
                 THEN 'Neptune to Saturn sized'
             WHEN planet_radius_earth < 11.2
@@ -245,7 +245,7 @@ earth_comparisons AS (
             WHEN orbital_semi_major_axis_au < 0.1
                 THEN
                     round(orbital_semi_major_axis_au::numeric, 3)::text
-                    || ' AU (Closer to star than Mercury to our Sun)'
+                    || ' AU (Shorter Orbit than Mercury)'
             WHEN orbital_semi_major_axis_au < 0.4
                 THEN
                     round(orbital_semi_major_axis_au::numeric, 2)::text

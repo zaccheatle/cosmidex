@@ -152,12 +152,12 @@ function App() {
                     : <span>{currentPlanet.size_class}</span></p>
                   <p>Escape Velocity<Tooltip text="The minimum speed needed to escape this planet's gravitational pull without further propulsion. Earth's escape velocity is 11.2 km/s. Higher escape velocity means the planet can hold onto a thicker atmosphere — too low and gases leak into space over time." />
                     : <span>{currentPlanet.escape_velocity_earth 
-                        ? currentPlanet.escape_velocity_earth.toFixed(2) + '× Earth — ' + 
-                          (currentPlanet.escape_velocity_earth < 0.5 ? 'atmosphere likely thin or absent' :
-                          currentPlanet.escape_velocity_earth < 0.8 ? 'thin atmosphere, some gas loss over time' :
-                          currentPlanet.escape_velocity_earth < 1.2 ? 'similar to Earth, good atmosphere retention' :
-                          currentPlanet.escape_velocity_earth < 2.0 ? 'thick atmosphere likely' :
-                          'very strong gravitational grip')
+                        ? currentPlanet.escape_velocity_earth.toFixed(2) + '× Earth (' + 
+                          (currentPlanet.escape_velocity_earth < 0.5 ? 'atmosphere likely thin or absent)' :
+                          currentPlanet.escape_velocity_earth < 0.8 ? 'thin atmosphere, some gas loss over time)' :
+                          currentPlanet.escape_velocity_earth < 1.2 ? 'similar to Earth, good atmosphere retention)' :
+                          currentPlanet.escape_velocity_earth < 2.0 ? 'thick atmosphere likely)' :
+                          'strong gravitational grip)')
                           : 'unknown'}</span>
                   </p>
 
@@ -169,10 +169,14 @@ function App() {
                     : <span>{currentPlanet.temperature_description}</span></p>
                   <p>Habitable Zone<Tooltip text="The conservative zone is where liquid water is almost certainly stable. The optimistic zone extends further — water is possible but less certain." />
                     : <span>{hzLabels[currentPlanet.hz_membership] || currentPlanet.hz_membership}</span></p>
-                  <p>Equilibrium Temperature<Tooltip text="Theoretical surface temperature assuming no atmosphere. Earth's equilibrium temp is -5°C / 23°F but actual average is 15°C / 59°F due to greenhouse warming." />
-                    : <span>{currentPlanet.equilibrium_temp_fahrenheit}°F | {currentPlanet.equilibrium_temp_celsius}°C</span></p>
+                  <p>Seasons<Tooltip text="TBD"/>
+                    : <span>TBD</span>
+                  </p>
                   <p>Habitable Zone Distance<Tooltip text="Where the planet sits within its star's habitable zone. 0 = perfect center, -1 = inner edge, +1 = outer edge. Beyond ±1 means outside the zone." />
                     : <span>{currentPlanet.hzd_score ? currentPlanet.hzd_score.toFixed(3) : 'unknown'}</span></p>
+                  <p>Equilibrium Temperature<Tooltip text="Theoretical surface temperature assuming no atmosphere. Earth's equilibrium temp is -5°C / 23°F but actual average is 15°C / 59°F due to greenhouse warming." />
+                    : <span>{currentPlanet.equilibrium_temp_fahrenheit}°F | {currentPlanet.equilibrium_temp_celsius}°C</span></p>
+                  <p></p>
                   <p>Weather Guesstimate<Tooltip text="Estimated atmospheric conditions based on planet type, temperature, and star type. These are scientific inferences, not direct measurements." />
                     : <span>{currentPlanet.weather_estimation || 'unknown'}</span></p>
               </>
