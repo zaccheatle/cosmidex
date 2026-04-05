@@ -5,12 +5,11 @@ Docstring for planet_loader
 # Import dependencies
 import logging
 import os
-from typing import Any
 
 import pandas as pd
-import psycopg2
+import sqlalchemy
+import sqlalchemy.exc
 from dotenv import load_dotenv
-from psycopg2 import extras, sql
 
 # set log level
 logging.basicConfig(level=logging.DEBUG)
@@ -20,67 +19,41 @@ load_dotenv()
 
 
 # Upsert into db
-def load_db(data: pd.DataFrame, schema_name: str, table_name: str) -> Any:
+def load_db(data: pd.DataFrame, schema_name: str, table_name: str) -> None:
     """
-    Docstring for load_db
+    Dynamically Load DataFrame to Postgres, auto-creating table from raw DataFrame schema
 
-    :param data: Description
-    :type data: pd.DataFrame
-    :param schema_name: Description
-    :type schema_name: str
-    :param table_name: Description
-    :type table_name: str
-    :return: Description
-    :rtype: Any
+    Args:
+        data (pd.Dataframe): Dataframe of data to be inserted into db.
+        schema_name (str): Database schema to use for insert.
+        table_name (str): Database table where date will be inserted.
+
+    Returns:
+        None.
+
+    Raises:
+        SQLAlchemyError: Database error.
     """
-
-    data_to_upsert = list(data.itertuples(index=False, name=None))
 
     try:
-        logging.debug("Connecting to database....")
-        with psycopg2.connect(
-            host=os.getenv("POSTGRES_HOST"),
-            dbname=os.getenv("POSTGRES_DB"),
-            user=os.getenv("POSTGRES_USER"),
-            password=os.getenv("POSTGRES_PASSWORD"),
-            port=os.getenv("POSTGRES_PORT"),
-            sslmode="disable",
-        ) as conn:
-            logging.info("Connection successful!")
+        conn_string = f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
 
-            with conn.cursor() as cur:  # Cursor context manager
-                upsert_query = sql.SQL("""
-                    INSERT INTO {}.{} (
-                        pl_name, hostname, pl_rade, pl_bmasse, pl_eqt, pl_orbper, 
-                        pl_orbsmax, st_teff, st_spectype, st_rad, st_mass, sy_dist, 
-                        disc_year, discoverymethod, default_flag
-                    ) VALUES %s
-                    ON CONFLICT (pl_name) 
-                    DO UPDATE SET
-                        hostname = EXCLUDED.hostname,
-                        pl_rade = EXCLUDED.pl_rade,
-                        pl_bmasse = EXCLUDED.pl_bmasse,
-                        pl_eqt = EXCLUDED.pl_eqt,
-                        pl_orbper = EXCLUDED.pl_orbper,
-                        pl_orbsmax = EXCLUDED.pl_orbsmax,
-                        st_teff = EXCLUDED.st_teff,
-                        st_spectype = EXCLUDED.st_spectype,
-                        st_rad = EXCLUDED.st_rad,
-                        st_mass = EXCLUDED.st_mass,
-                        sy_dist = EXCLUDED.sy_dist,
-                        disc_year = EXCLUDED.disc_year,
-                        discoverymethod = EXCLUDED.discoverymethod,
-                        default_flag = EXCLUDED.default_flag
-                """).format(
-                    sql.Identifier(schema_name),
-                    sql.Identifier(table_name),
-                )
+        engine = sqlalchemy.create_engine(conn_string)
 
-                extras.execute_values(cur, upsert_query, data_to_upsert, page_size=1000)
+        with engine.connect() as conn:  # type: ignore
+            data.to_sql(
+                name=table_name,
+                con=conn,
+                schema=schema_name,
+                if_exists="replace",  # or 'append' for upserts
+                index=False,
+                method="multi",
+            )
 
-            conn.commit()
-            logging.info(f"Bulk upsert successful for {len(data_to_upsert)} rows.")
+        logging.info(
+            f"Successfully loaded {len(data)} rows to {schema_name}.{table_name}"
+        )
 
-    except psycopg2.Error as e:
+    except sqlalchemy.exc.SQLAlchemyError as e:
         logging.error(f"Database error: {e}")
         raise

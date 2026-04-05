@@ -72,8 +72,6 @@ def build_query(
 
                 elif format == "csv":
                     data = pd.read_csv(StringIO(response.text))
-                    data.to_csv("tests/debug/output.csv")
-                    logging.debug(f"file {data} saved to folder successfully!")
                     return data
 
                 elif format == "tsv":

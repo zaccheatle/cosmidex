@@ -8,32 +8,33 @@ from typing import Any
 import psycopg2
 from dotenv import load_dotenv
 
-# set log level
 logging.basicConfig(level=logging.DEBUG)
 
-# set env variables
 load_dotenv()
 
 
-# test db connection
 def test_connection() -> Any | None:
-    """
-    Docstring for test_connection
+    """Test and verify db connection.
 
-    :return: Description
-    :rtype: Any | None
+    Args:
+        None.
+
+    Returns:
+        Conn or None.
+
+    Raises:
+        DatabaseError: Psycopg2 database error.
     """
 
-    # initialize conn
     conn = None
     try:
-        logging.debug("Connecting to databse....")
+        logging.debug("Connecting to database....")
         conn = psycopg2.connect(
-            host="127.0.0.1",
+            host=os.getenv("POSTGRES_HOST"),
             dbname=os.getenv("POSTGRES_DB"),
             user=os.getenv("POSTGRES_USER"),
             password=os.getenv("POSTGRES_PASSWORD"),
-            port=5433,
+            port=int(os.getenv("POSTGRES_PORT", 5432)),
             sslmode="disable",
         )
 

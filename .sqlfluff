@@ -1,6 +1,8 @@
 [sqlfluff]
 dialect = postgres
 
+max_line_length = 150
+
 [sqlfluff:rules:capitalisation.keywords]
 capitalisation_policy = upper
 
