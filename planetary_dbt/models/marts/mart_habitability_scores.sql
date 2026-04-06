@@ -98,11 +98,11 @@ scored AS (
             Think of a comet's orbit — very high eccentricity.
         */
         CASE
-            WHEN orbital_eccentricity IS null THEN 'unknown'
-            WHEN orbital_eccentricity < 0.1 THEN 'low'
-            WHEN orbital_eccentricity <= 0.3 THEN 'moderate'
-            WHEN orbital_eccentricity > 0.3 THEN 'high'
-        END AS eccentricity_risk,
+            WHEN orbital_eccentricity IS null THEN 'Unknown'
+            WHEN orbital_eccentricity < 0.1 THEN 'High'
+            WHEN orbital_eccentricity <= 0.3 THEN 'Moderate'
+            WHEN orbital_eccentricity > 0.3 THEN 'Low'
+        END AS orbital_stability,
 
         -- hz membership flag
         CASE
@@ -163,7 +163,7 @@ SELECT
             esi_score >= 0.8
             AND hzd_score BETWEEN -1 AND 1
             AND planet_radius_earth <= 1.75
-            AND eccentricity_risk != 'high'
+            AND orbital_stability != 'Low'
             AND stellar_effective_temp_k BETWEEN 3700 AND 7500
             THEN 'tier_1_strong_candidate'
         WHEN

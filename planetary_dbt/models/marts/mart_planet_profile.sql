@@ -13,7 +13,7 @@ WITH base AS (
         h.hz_membership,
         h.hzd_score,
         h.habitability_tier,
-        h.eccentricity_risk,
+        h.orbital_stability,
         h.equilibrium_temp_k_final,
         h.escape_velocity_earth,
         h.esi_score,
@@ -36,6 +36,7 @@ display_calcs AS (
 travel_times AS (
     SELECT
         *,
+        distance_light_years AS radio_signal_years,
         distance_light_years * 38544 AS shuttle_travel_years,
         distance_light_years * 17693 AS voyager_travel_years,
         distance_light_years * 1560 AS parker_probe_travel_years,
@@ -48,13 +49,40 @@ descriptions AS (
         *,
 
         CASE
-            WHEN equilibrium_temp_celsius < -60 THEN 'frozen'
-            WHEN equilibrium_temp_celsius >= -60 AND equilibrium_temp_celsius < 0 THEN 'cold'
-            WHEN equilibrium_temp_celsius >= 0 AND equilibrium_temp_celsius < 50 THEN 'temperate'
-            WHEN equilibrium_temp_celsius >= 50 AND equilibrium_temp_celsius < 100 THEN 'warm'
-            WHEN equilibrium_temp_celsius >= 100 AND equilibrium_temp_celsius < 500 THEN 'hot'
-            WHEN equilibrium_temp_celsius >= 500 THEN 'scorching'
+            WHEN equilibrium_temp_celsius IS NULL
+                THEN 'Climate unknown'
+            WHEN equilibrium_temp_celsius > 500
+                THEN 'Class X — Uninhabitable'
+            WHEN equilibrium_temp_celsius > 100
+                THEN 'Class B — Hyper-Arid'
+            WHEN equilibrium_temp_celsius > 50
+                THEN 'Class B — Arid'
+            WHEN equilibrium_temp_celsius > 18
+                THEN 'Class A — Tropical'
+            WHEN equilibrium_temp_celsius > 0
+                THEN 'Class C — Temperate'
+            WHEN equilibrium_temp_celsius > -15
+                THEN 'Class D — Continental'
+            WHEN equilibrium_temp_celsius > -40
+                THEN 'Class E — Polar'
+            ELSE
+                'Class EF — Ice Cap'
         END AS temperature_description,
+
+        CASE
+            WHEN stellar_effective_temp_k < 3000
+                THEN '~ a candle flame'
+            WHEN stellar_effective_temp_k < 3700
+                THEN '~ a welding torch'
+            WHEN stellar_effective_temp_k < 4500
+                THEN '~ molten lava'
+            WHEN stellar_effective_temp_k < 5200
+                THEN '~ a light bulb'
+            WHEN stellar_effective_temp_k BETWEEN 5200 AND 6000
+                THEN '~ the Sun'
+            WHEN stellar_effective_temp_k BETWEEN 10000 AND 30000
+                THEN '~ a lightning bolt'
+        END AS star_temp_description,
 
         CASE
         -- Sub-terran: smaller than Earth, likely rocky
@@ -90,23 +118,33 @@ descriptions AS (
 
         CASE
             WHEN planet_radius_earth < 0.3
-                THEN 'Moon sized'
-            WHEN planet_radius_earth < 0.5
+                THEN 'Smaller than the Moon'
+            WHEN planet_radius_earth < 0.4
+                THEN 'Moon to Mercury sized'
+            WHEN planet_radius_earth < 0.6
                 THEN 'Mercury to Mars sized'
             WHEN planet_radius_earth < 0.8
                 THEN 'Mars sized'
             WHEN planet_radius_earth BETWEEN 0.8 AND 1.2
                 THEN 'Earth sized'
+            WHEN planet_radius_earth < 1.5
+                THEN 'Between Earth and Venus'
             WHEN planet_radius_earth < 1.75
-                THEN 'Larger than Earth (no solar system equivalent)'
+                THEN 'Super Earth'
+            WHEN planet_radius_earth < 2.5
+                THEN 'Between Earth and Neptune'
             WHEN planet_radius_earth < 3.86
-                THEN 'Sub-Neptune (smaller than Uranus)'
+                THEN 'Approaching Neptune sized'
+            WHEN planet_radius_earth < 6.0
+                THEN 'Neptune to Uranus sized'
             WHEN planet_radius_earth < 9.14
-                THEN 'Neptune to Saturn sized'
+                THEN 'Uranus to Saturn sized'
             WHEN planet_radius_earth < 11.2
                 THEN 'Saturn to Jupiter sized'
+            WHEN planet_radius_earth < 15.0
+                THEN 'Jupiter sized'
             ELSE
-                'Jupiter sized or larger'
+                'Larger than Jupiter'
         END AS size_class,
 
         CASE
@@ -118,16 +156,21 @@ descriptions AS (
         END AS star_type_description,
 
         CASE
-            WHEN distance_light_years < 20
-                THEN 'In our stellar neighborhood'
-            WHEN distance_light_years < 100
-                THEN 'Nearby in the Milky Way'
-            WHEN distance_light_years < 1000
-                THEN 'Within our galactic region'
-            WHEN distance_light_years >= 1000
-                THEN 'Deep in the Milky Way'
-            ELSE 'Unknown distance'
-        END AS distance_description,
+            WHEN stellar_age_gyr IS NULL
+                THEN 'Age unknown'
+            WHEN stellar_age_gyr < 0.5
+                THEN round(stellar_age_gyr::numeric, 1)::text || ' billion years'
+            WHEN stellar_age_gyr < 2.0
+                THEN round(stellar_age_gyr::numeric, 1)::text || ' billion years'
+            WHEN stellar_age_gyr < 5.0
+                THEN round(stellar_age_gyr::numeric, 1)::text || ' billion years'
+            WHEN stellar_age_gyr < 8.0
+                THEN round(stellar_age_gyr::numeric, 1)::text || ' billion years'
+            WHEN stellar_age_gyr < 12.0
+                THEN round(stellar_age_gyr::numeric, 1)::text || ' billion years'
+            ELSE
+                round(stellar_age_gyr::numeric, 1)::text || ' billion years'
+        END AS star_age_description,
 
         CASE
             WHEN shuttle_travel_years < 1000
@@ -138,7 +181,18 @@ descriptions AS (
                 THEN round(shuttle_travel_years / 1000000)::text || ' million years'
             ELSE
                 round(shuttle_travel_years / 1000000000)::text || ' billion years'
-        END AS shuttle_travel_description
+        END AS shuttle_travel_description,
+
+        CASE
+            WHEN distance_light_years < 1
+                THEN round(distance_light_years * 365.25::numeric, 0)::text || ' Earth days'
+            WHEN distance_light_years < 100
+                THEN round(distance_light_years::numeric, 1)::text || ' years'
+            WHEN distance_light_years < 1000
+                THEN round(distance_light_years::numeric, 0)::text || ' years'
+            ELSE
+                round(distance_light_years::numeric, 0)::text || ' years'
+        END AS radio_signal_description
 
     FROM travel_times
 ),
@@ -146,73 +200,16 @@ descriptions AS (
 earth_comparisons AS (
     SELECT
         *,
-        -- size relative to Earth
-        CASE
-            WHEN planet_radius_earth < 0.5
-                THEN round(planet_radius_earth::numeric, 2)::text || '× Earth'
-            WHEN planet_radius_earth < 0.8
-                THEN round(planet_radius_earth::numeric, 2)::text || '× Earth'
-            WHEN planet_radius_earth BETWEEN 0.8 AND 1.2
-                THEN round(planet_radius_earth::numeric, 2)::text || '× Earth'
-            WHEN planet_radius_earth < 1.75
-                THEN round(planet_radius_earth::numeric, 2)::text || '× Earth'
-            WHEN planet_radius_earth < 3.5
-                THEN round(planet_radius_earth::numeric, 2)::text || '× Earth'
-            WHEN planet_radius_earth < 6.0
-                THEN round(planet_radius_earth::numeric, 2)::text || '× Earth'
-            WHEN planet_radius_earth < 9.0
-                THEN round(planet_radius_earth::numeric, 2)::text || '× Earth'
-            WHEN planet_radius_earth < 12.0
-                THEN round(planet_radius_earth::numeric, 2)::text || '× Earth'
-            ELSE
-                round(planet_radius_earth::numeric, 2)::text || '× Earth'
-        END AS size_description,
+        round((planet_radius_earth * 6371)::numeric, 0)::text
+        || ' km (' || round(planet_radius_earth::numeric, 2)::text || '× Earth)'
+            AS size_description,
 
-        -- gravity (derived from mass and radius)
-        -- surface gravity scales as mass / radius²
-        -- in Earth units: g = planet_mass_earth / planet_radius_earth²
         CASE
             WHEN planet_mass_earth IS NULL OR planet_radius_earth IS NULL
-                THEN 'gravity unknown'
-            WHEN (planet_mass_earth / planet_radius_earth ^ 2) < 0.1
-                THEN
-                    round((planet_mass_earth / planet_radius_earth ^ 2)::numeric, 2)::text
-                    || '× Earth (practically floating)'
-            WHEN (planet_mass_earth / planet_radius_earth ^ 2) < 0.3
-                THEN
-                    round((planet_mass_earth / planet_radius_earth ^ 2)::numeric, 2)::text
-                    || '× Earth (bounding with each step)'
-            WHEN (planet_mass_earth / planet_radius_earth ^ 2) < 0.5
-                THEN
-                    round((planet_mass_earth / planet_radius_earth ^ 2)::numeric, 2)::text
-                    || '× Earth (light on your feet)'
-            WHEN (planet_mass_earth / planet_radius_earth ^ 2) < 0.7
-                THEN
-                    round((planet_mass_earth / planet_radius_earth ^ 2)::numeric, 2)::text
-                    || '× Earth (a spring in your step)'
-            WHEN (planet_mass_earth / planet_radius_earth ^ 2) BETWEEN 0.7 AND 1.3
-                THEN
-                    round((planet_mass_earth / planet_radius_earth ^ 2)::numeric, 2)::text
-                    || '× Earth (feels like home)'
-            WHEN (planet_mass_earth / planet_radius_earth ^ 2) < 1.8
-                THEN
-                    round((planet_mass_earth / planet_radius_earth ^ 2)::numeric, 2)::text
-                    || '× Earth (legs feeling heavy)'
-            WHEN (planet_mass_earth / planet_radius_earth ^ 2) < 2.5
-                THEN
-                    round((planet_mass_earth / planet_radius_earth ^ 2)::numeric, 2)::text
-                    || '× Earth (dragging yourself forward)'
-            WHEN (planet_mass_earth / planet_radius_earth ^ 2) < 4.0
-                THEN
-                    round((planet_mass_earth / planet_radius_earth ^ 2)::numeric, 2)::text
-                    || '× Earth (barely able to stand)'
-            WHEN (planet_mass_earth / planet_radius_earth ^ 2) < 7.0
-                THEN
-                    round((planet_mass_earth / planet_radius_earth ^ 2)::numeric, 2)::text
-                    || '× Earth (crushed to the ground)'
+                THEN 'unknown'
             ELSE
-                round((planet_mass_earth / planet_radius_earth ^ 2)::numeric, 2)::text
-                || '× Earth — instantly fatal'
+                round(((planet_mass_earth / planet_radius_earth ^ 2) * 9.81)::numeric, 2)::text
+                || ' m/s² (' || round((planet_mass_earth / planet_radius_earth ^ 2)::numeric, 2)::text || '× Earth)'
         END AS gravity_description,
 
         -- year length
@@ -230,7 +227,7 @@ earth_comparisons AS (
             WHEN orbital_period_days > 300 AND orbital_period_days < 400
                 THEN
                     round(orbital_period_days::numeric, 1)::text
-                    || ' Earth days (close to an Earth year)'
+                    || ' Earth days'
             WHEN orbital_period_days < 1000
                 THEN
                     round((orbital_period_days / 365.25)::numeric, 1)::text
@@ -245,38 +242,38 @@ earth_comparisons AS (
             WHEN orbital_semi_major_axis_au < 0.1
                 THEN
                     round(orbital_semi_major_axis_au::numeric, 3)::text
-                    || ' AU (Shorter Orbit than Mercury)'
+                    || ' AU'
             WHEN orbital_semi_major_axis_au < 0.4
                 THEN
                     round(orbital_semi_major_axis_au::numeric, 2)::text
-                    || ' AU (Mercury-like orbit)'
+                    || ' AU'
             WHEN orbital_semi_major_axis_au < 0.8
                 THEN
                     round(orbital_semi_major_axis_au::numeric, 2)::text
-                    || ' AU (Venus-like orbit)'
+                    || ' AU'
             WHEN orbital_semi_major_axis_au BETWEEN 0.8 AND 1.2
                 THEN
                     round(orbital_semi_major_axis_au::numeric, 2)::text
-                    || ' AU (Earth-like orbital distance)'
+                    || ' AU'
             WHEN orbital_semi_major_axis_au < 2.0
                 THEN
                     round(orbital_semi_major_axis_au::numeric, 2)::text
-                    || ' AU (Mars-like orbit)'
+                    || ' AU'
             WHEN orbital_semi_major_axis_au < 6.0
                 THEN
                     round(orbital_semi_major_axis_au::numeric, 2)::text
-                    || ' AU (between the asteroid belt and Jupiter''s orbit)'
+                    || ' AU'
             WHEN orbital_semi_major_axis_au < 12.0
                 THEN
                     round(orbital_semi_major_axis_au::numeric, 2)::text
-                    || ' AU (Saturn-like orbital distance)'
+                    || ' AU'
             WHEN orbital_semi_major_axis_au < 20.0
                 THEN
                     round(orbital_semi_major_axis_au::numeric, 2)::text
-                    || ' AU (Uranus-like orbital distance)'
+                    || ' AU'
             ELSE
                 round(orbital_semi_major_axis_au::numeric, 1)::text
-                || ' AU (Neptune-like distance or beyond)'
+                || ' AU'
         END AS orbital_distance_description,
 
         -- Weather estimation
@@ -323,12 +320,14 @@ earth_comparisons AS (
 SELECT
     planet_name,
     host_star_name,
+    discovery_year,
+    discovery_method,
     planet_type,
     hz_membership,
     hzd_score,
     habitability_tier,
     orbital_eccentricity,
-    eccentricity_risk,
+    orbital_stability,
     size_class,
     esi_score,
     is_notable,
@@ -338,11 +337,13 @@ SELECT
     equilibrium_temp_celsius,
     equilibrium_temp_fahrenheit,
     temperature_description,
+    star_temp_description,
     star_type_description,
+    star_age_description,
     escape_velocity_earth,
     distance_light_years,
-    distance_description,
     shuttle_travel_description,
+    radio_signal_description,
     size_description,
     gravity_description,
     year_description,
