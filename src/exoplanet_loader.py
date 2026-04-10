@@ -40,15 +40,14 @@ def load_db(data: pd.DataFrame, schema_name: str, table_name: str) -> None:
 
         engine = sqlalchemy.create_engine(conn_string)
 
-        with engine.connect() as conn:  # type: ignore
-            data.to_sql(
-                name=table_name,
-                con=conn,
-                schema=schema_name,
-                if_exists="replace",  # or 'append' for upserts
-                index=False,
-                method="multi",
-            )
+        data.to_sql(
+            name=table_name,
+            con=engine,
+            schema=schema_name,
+            if_exists="replace",  # or 'append' for upserts
+            index=False,
+            method="multi",
+        )
 
         logging.info(
             f"Successfully loaded {len(data)} rows to {schema_name}.{table_name}"

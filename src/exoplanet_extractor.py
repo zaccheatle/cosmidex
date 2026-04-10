@@ -71,11 +71,13 @@ def build_query(
                     return response.json()
 
                 elif format == "csv":
-                    data = pd.read_csv(StringIO(response.text))
+                    data = pd.read_csv(StringIO(response.text), low_memory=False)
                     return data
 
                 elif format == "tsv":
-                    return pd.read_csv(StringIO(response.text), sep="\t")
+                    return pd.read_csv(
+                        StringIO(response.text), sep="\t", low_memory=False
+                    )
 
                 elif format == "votable":
                     votable = parse(response.content)

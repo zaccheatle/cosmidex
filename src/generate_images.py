@@ -18,7 +18,7 @@ from openai import OpenAI
 from psycopg2.extensions import connection as PGConnection
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-from planetary_api.database import connection_params
+from cosmidex_api.database import connection_params
 
 load_dotenv()
 
