@@ -12,7 +12,7 @@ prompt_parts AS (
     SELECT
 
         *,
-        'photorealistic sci-fi concept art, cinematic lighting, detailed, atmospheric' AS style_suffix,
+        'photorealistic sci-fi concept art, cinematic lighting, detailed, atmospheric, grounded in reality' AS style_suffix,
 
         CASE
             WHEN planet_type = 'rocky' THEN 'A rocky terrestrial planet'

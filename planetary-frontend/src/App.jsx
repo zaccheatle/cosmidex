@@ -90,27 +90,29 @@ function App() {
             {currentPlanet && (
               <>
                 <h2>{currentPlanet.planet_name}<Tooltip text="Planet name — most exoplanets are named after their host star with a letter suffix; b for the first planet discovered, c for the second, and so on."/></h2>
-                  <p>Discovery Year<Tooltip text="The year this planet was confirmed. The first exoplanet around a Sun-like star was discovered in 1995. The Kepler Space Telescope launched in 2009 revolutionized the field — most confirmed exoplanets were found by Kepler. The TESS mission launched in 2018 continues the search today." />
+                  <p>Discovery Year<Tooltip text="The year this planet was confirmed. The first exoplanet around a Sun-like star was discovered in 1995. The Kepler Space Telescope launched in 2009 & revolutionized the field — most confirmed exoplanets were found by Kepler. The TESS mission launched in 2018 continues the search today." />
                     : <span>{currentPlanet.discovery_year}</span></p>
                   <p>Discovery Method<Tooltip text="How this planet was detected. Transit = planet passes in front of its star, dimming the light slightly — used by Kepler and TESS. Radial Velocity = the planet's gravity causes the star to wobble, detected by Doppler shift. Direct Imaging = the planet is photographed directly, only possible for large planets far from their star. Microlensing = a passing star's gravity bends and magnifies light, briefly revealing a planet." />
                     : <span>{currentPlanet.discovery_method}</span></p>
 
                 <hr />
                   <p className="section-label">Solar System</p>
-                  <p>Host Star<Tooltip text="The star this planet orbits." />
-                    : <span>{currentPlanet.host_star_name}</span></p>
                   <p>Constellation<Tooltip text="The constellation this planet's host star appears in from Earth. Constellations are patterns of stars as seen from our perspective — the stars themselves may be vastly different distances apart. There are 88 officially recognized constellations defined by the International Astronomical Union." />
                     : <span>TBD</span></p>
                   <p>Host Star Age<Tooltip text="Age of the host star in billions of years. Our Sun is 4.6 billion years old with roughly 5 billion years remaining. Red dwarfs live for trillions of years — far longer than the current age of the universe. Sun-like G stars live 10-12 billion years. Hot blue-white stars burn through their fuel in just millions of years — too short for complex life to develop. The longer a star lives, the more time life has to emerge and evolve." />
                     : <span>{currentPlanet.star_age_description}</span></p>
-                  <p>Radio Signal Travel Distance<Tooltip text="Approx. travel time from Earth to host star. Radio signals travel at the speed of light — 299,792 km/s — the absolute speed limit of the universe. This is the one-way travel time for a signal sent from Earth today. Any reply would take twice as long. For context: a signal to the Moon takes 1.3 seconds. A signal to Mars takes up to 20 minutes. Beyond our solar system, even the nearest star takes over 4 years. For distant Kepler planets thousands of light years away, any conversation would span civilizations." />
-                    : <span>{currentPlanet.radio_signal_description}</span></p>
+                  <p>Host Star<Tooltip text="The star this planet orbits." />
+                    : <span>{currentPlanet.host_star_name}</span></p>
                   <p>Host Star Distance<Tooltip text="Distance of host star from Earth. 1 light year = 9.46 trillion km." />
                     : <span>{currentPlanet.distance_light_years.toFixed(1)} light years</span></p>
-                  <p>Shuttle Travel Distance<Tooltip text="Approx. travel time from Earth to host star travelling at the Space Shuttle's top speed of 28,000 km/h — the fastest crewed vehicle humans have built." />
-                    : <span>{currentPlanet.shuttle_travel_description}</span></p>
+                  <p>Host Star Type<Tooltip text=""/>
+                    : <span>{currentPlanet.star_type_description}</span></p>
+                  <p>Radio Signal Travel Distance<Tooltip text="Approx. travel time from Earth to host star. Radio signals travel at the speed of light — 299,792 km/s — the absolute speed limit of the universe. This is the one-way travel time for a signal sent from Earth today. Any reply would take twice as long. For context: a signal to the Moon takes 1.3 seconds. A signal to Mars takes up to 20 minutes. Beyond our solar system, even the nearest star takes over 4 years. For distant Kepler planets thousands of light years away, any conversation would span civilizations." />
+                    : <span>{currentPlanet.radio_signal_description}</span></p>
                   <p>Host Star Temperature<Tooltip text="The surface temperature of the host star in Kelvin. For reference: a candle flame burns at ~3,000K, our Sun is 5,778K, and a lightning bolt reaches ~30,000K. Red dwarfs (below 3,700K) are cooler than a welding torch. The hottest blue-white stars burn at over 30,000K — hotter than a lightning strike. Star temperature determines the color of light bathing the planet, where the habitable zone sits, and how long the star will live." />
                     : <span>{currentPlanet.stellar_effective_temp_k.toLocaleString()}K ({currentPlanet.star_temp_description})</span></p>
+                  <p>Shuttle Travel Distance<Tooltip text="Approx. travel time from Earth to host star travelling at the Space Shuttle's top speed of 28,000 km/h — the fastest crewed vehicle humans have built." />
+                    : <span>{currentPlanet.shuttle_travel_description}</span></p>
 
                 <hr />
                   <p className="section-label">Orbit</p>
@@ -157,9 +159,9 @@ function App() {
                     : <span>{currentPlanet.equilibrium_temp_fahrenheit}°F | {currentPlanet.equilibrium_temp_celsius}°C</span></p>
                   <p>Habitable Zone Distance<Tooltip text="Where the planet sits within its star's habitable zone. 0 = perfect center, -1 = inner edge, +1 = outer edge. Beyond ±1 means outside the zone." />
                     : <span>{currentPlanet.hzd_score ? currentPlanet.hzd_score.toFixed(3) : 'unknown'}</span></p>
-                  {/* <p></p>
-                  <p>Weather Guesstimate<Tooltip text="Estimated atmospheric conditions based on planet type, temperature, and star type. These are scientific inferences, not direct measurements." />
-                    : <span>{currentPlanet.weather_estimation || 'unknown'}</span></p> */}
+
+                <hr />
+                  <p></p>
               </>
           )}
           </div>

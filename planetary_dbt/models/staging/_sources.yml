@@ -2,7 +2,7 @@ version: 2
 
 sources:
   - name: raw
-    database: planetary_data
+    database: cosmidex
     schema: raw
     tables:
     - name: exoplanets

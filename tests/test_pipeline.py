@@ -7,8 +7,8 @@ import os
 
 from dotenv import load_dotenv
 
-from src.planet_extractor import build_query
-from src.planet_loader import load_db
+from src.exoplanet_extractor import build_query
+from src.exoplanet_loader import load_db
 
 load_dotenv()
 

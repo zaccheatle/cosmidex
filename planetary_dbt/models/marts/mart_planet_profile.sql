@@ -148,12 +148,89 @@ descriptions AS (
         END AS size_class,
 
         CASE
-            WHEN stellar_effective_temp_k < 3700 THEN 'Red dwarf'
-            WHEN stellar_effective_temp_k >= 3700 AND stellar_effective_temp_k < 5200 THEN 'Orange dwarf'
-            WHEN stellar_effective_temp_k >= 5200 AND stellar_effective_temp_k < 6000 THEN 'Sun-like star'
-            WHEN stellar_effective_temp_k >= 6000 AND stellar_effective_temp_k < 7500 THEN 'Warm yellow star'
-            WHEN stellar_effective_temp_k >= 7500 THEN 'Hot blue-white star'
-        END AS star_type_description,
+            WHEN
+                stellar_radius_solar IS NULL
+                OR stellar_luminosity_log_solar IS NULL
+                THEN 'Unknown'
+            WHEN
+                (stellar_radius_solar < 0.02)
+                AND (stellar_luminosity_log_solar < -2)
+                THEN 'White Dwarf'
+            WHEN
+                (
+                    stellar_radius_solar > 0.02
+                    AND stellar_radius_solar <= 0.8
+                )
+                OR (stellar_luminosity_log_solar < 0)
+                THEN 'Subdwarf / low main sequence'
+            WHEN
+                (
+                    stellar_radius_solar > 0.08
+                    AND stellar_radius_solar <= 1.5
+                )
+                OR (
+                    stellar_luminosity_log_solar > 0
+                    AND stellar_luminosity_log_solar < 0.3
+                )
+                THEN 'Main Sequence V'
+            WHEN
+                (
+                    stellar_radius_solar > 1.5
+                    AND stellar_radius_solar <= 3.5
+                )
+                OR (
+                    stellar_luminosity_log_solar > 0.3
+                    AND stellar_luminosity_log_solar < 1.0
+                )
+                THEN 'Subgiant IV'
+            WHEN
+                (
+                    stellar_radius_solar > 3.5
+                    AND stellar_radius_solar <= 10
+                )
+                OR (
+                    stellar_luminosity_log_solar > 1.0
+                    AND stellar_luminosity_log_solar < 2.0
+                )
+                THEN 'Giant III'
+            WHEN
+                (
+                    stellar_radius_solar > 10
+                    AND stellar_radius_solar <= 30
+                )
+                OR (
+                    stellar_luminosity_log_solar > 2.0
+                    AND stellar_luminosity_log_solar < 3.0
+                )
+                THEN 'Bright Giant II'
+            WHEN
+                (
+                    stellar_radius_solar > 30
+                    AND stellar_radius_solar <= 100
+                )
+                OR (
+                    stellar_luminosity_log_solar > 3.0
+                    AND stellar_luminosity_log_solar < 4.0
+                )
+                THEN 'Supergiant Ib'
+            WHEN (stellar_radius_solar > 100) OR (stellar_luminosity_log_solar > 4.0)
+                THEN 'Supergiant Ia / Hypergiant'
+            ELSE 'Unclassified'
+        END AS star_luminosity_class,
+
+        CASE
+            WHEN stellar_effective_temp_k IS NULL THEN 'Unknown'
+            WHEN stellar_effective_temp_k >= 30000 THEN 'Class O - Blue'
+            WHEN stellar_effective_temp_k < 30000 THEN 'Class B - Blue-white'
+            WHEN stellar_effective_temp_k < 10000 THEN 'Class A - White'
+            WHEN stellar_effective_temp_k <= 7500 THEN 'Class F - Yellow-white'
+            WHEN stellar_effective_temp_k <= 6000 THEN 'Class G - Yellow'
+            WHEN stellar_effective_temp_k <= 5200 THEN 'Class K - Orange'
+            WHEN stellar_effective_temp_k <= 3700 THEN 'Class M - Red-orange'
+            WHEN stellar_effective_temp_k <= 2400 THEN 'Class L - Red'
+            WHEN stellar_effective_temp_k <= 1300 THEN 'Class T - Magenta'
+            WHEN stellar_effective_temp_k <= 700 THEN 'Class Y - Infrared'
+        END AS star_spectral_type,
 
         CASE
             WHEN stellar_age_gyr IS NULL
@@ -274,45 +351,7 @@ earth_comparisons AS (
             ELSE
                 round(orbital_semi_major_axis_au::numeric, 1)::text
                 || ' AU'
-        END AS orbital_distance_description,
-
-        -- Weather estimation
-        CASE
-            WHEN planet_type IN ('Jovian', 'Super Jovian', 'Hot Jovian')
-                THEN 'Permanent storms larger than Earth, winds exceeding 1000 mph'
-            WHEN planet_type = 'Neptunian'
-                THEN 'Dense crushing atmosphere, extreme pressure at surface level'
-            WHEN planet_type = 'Superterran — Hycean Candidate'
-                THEN 'Global ocean beneath a thick hydrogen atmosphere — possible liquid water at surface'
-            WHEN planet_type = 'Superterran'
-                THEN 'Dense thick atmosphere, extreme pressures likely at surface'
-            WHEN
-                temperature_description = 'scorching'
-                AND planet_type IN ('Terran', 'Likely Terran', 'Volatile-rich Terran', 'Subterran')
-                THEN 'Surface hot enough to melt lead, any atmosphere likely stripped away'
-            WHEN
-                temperature_description = 'hot'
-                AND planet_type IN ('Terran', 'Likely Terran', 'Volatile-rich Terran', 'Subterran')
-                THEN 'Runaway greenhouse effect likely, similar to Venus'
-            WHEN
-                star_type_description = 'Red dwarf'
-                AND planet_type IN ('Terran', 'Likely Terran', 'Volatile-rich Terran', 'Subterran')
-                AND temperature_description IN ('temperate', 'cold', 'frozen')
-                THEN 'Tidally locked — one side in permanent day, one in permanent night, extreme winds at the terminator boundary'
-            WHEN
-                temperature_description = 'temperate'
-                AND planet_type IN ('Terran', 'Likely Terran', 'Volatile-rich Terran', 'Subterran')
-                THEN 'Possible Earth-like weather patterns with liquid water cycles'
-            WHEN
-                temperature_description = 'cold'
-                AND planet_type IN ('Terran', 'Likely Terran', 'Volatile-rich Terran', 'Subterran')
-                THEN 'Thin cold atmosphere, similar to Mars — dust storms possible'
-            WHEN
-                temperature_description = 'frozen'
-                AND planet_type IN ('Terran', 'Likely Terran', 'Volatile-rich Terran', 'Subterran')
-                THEN 'Frozen surface, possible subsurface liquid ocean beneath ice'
-            ELSE 'Atmospheric conditions unknown'
-        END AS weather_estimation
+        END AS orbital_distance_description
 
     FROM descriptions
 )
@@ -338,8 +377,9 @@ SELECT
     equilibrium_temp_fahrenheit,
     temperature_description,
     star_temp_description,
-    star_type_description,
     star_age_description,
+    star_spectral_type,
+    star_luminosity_class,
     escape_velocity_earth,
     distance_light_years,
     shuttle_travel_description,
