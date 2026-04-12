@@ -9,7 +9,7 @@ SELECT
     -- identity
     pl_name::varchar(150) AS planet_name,
     hostname::varchar(150) AS host_star_name,
-    disc_year::integer AS discovery_year,
+    disc_year::varchar(4) AS discovery_year,
     discoverymethod::varchar(150) AS discovery_method,
     sy_dist::numeric AS distance_parsecs,
 
@@ -37,11 +37,13 @@ SELECT
     pl_bmasse IS NOT NULL AS planet_mass_earth_flag,
     pl_orbsmax IS NOT NULL AS orbital_semi_major_axis_au_flag,
     st_lum IS NOT NULL AS stellar_luminosity_log_solar_flag,
+    st_teff IS NOT NULL AS stellar_effective_temp_flag,
 
     -- minimum habitability flag
     pl_rade IS NOT NULL
     AND pl_bmasse IS NOT NULL
     AND pl_orbsmax IS NOT NULL
-    AND st_lum IS NOT NULL AS has_minimum_habitability_data
+    AND st_lum IS NOT NULL
+    AND st_teff IS NOT NULL AS has_minimum_habitability_data
 
 FROM {{ source('raw', 'exoplanets') }}

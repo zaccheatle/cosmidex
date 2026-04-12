@@ -19,6 +19,7 @@ WITH stellar_calcs AS (
         planet_mass_earth,
         planet_density_gcm3,
         stellar_effective_temp_k,
+        stellar_luminosity_log_solar,
 
         /* stellar luminosity:
         a log base 10 value relative to our Sun.
@@ -48,14 +49,88 @@ hz_boundaries AS (
         A brighter star pushes the HZ further out. A dimmer star pulls it closer in.
         The relationship follows an inverse square law — if you double the luminosity,
         the HZ boundaries move outward by the square root of 2 (about 1.41x).
-
-        Formula: hz_inner = sqrt(luminosity / flux_inner_limit)
-                hz_outer = sqrt(luminosity / flux_outer_limit)
         */
-        sqrt(stellar_luminosity_solar / 1.1) AS hz_inner_conservative_au,
-        sqrt(stellar_luminosity_solar / 0.36) AS hz_outer_conservative_au,
-        sqrt(stellar_luminosity_solar / 1.78) AS hz_inner_optimistic_au,
-        sqrt(stellar_luminosity_solar / 0.29) AS hz_outer_optimistic_au,
+        -- T* = stellar temp offset from Sun
+        stellar_effective_temp_k - 5780 AS t_star,
+
+        -- Conservative inner (Moist Greenhouse)
+        sqrt(
+            greatest(
+                stellar_luminosity_solar / nullif(
+                    1.0140
+                    + (8.1774e-5 * (stellar_effective_temp_k - 5780))
+                    + (1.7063e-9 * power(stellar_effective_temp_k - 5780, 2))
+                    + (-4.3241e-12 * power(stellar_effective_temp_k - 5780, 3))
+                    + (-6.6462e-16 * power(stellar_effective_temp_k - 5780, 4)),
+                    0
+                ),
+                0
+            )
+        ) AS hz_inner_conservative_au,
+
+        -- Conservative outer (Maximum Greenhouse)
+        sqrt(
+            greatest(
+                stellar_luminosity_solar / nullif(
+                    0.3438
+                    + (5.8942e-5 * (stellar_effective_temp_k - 5780))
+                    + (1.6558e-9 * power(stellar_effective_temp_k - 5780, 2))
+                    + (-3.0045e-12 * power(stellar_effective_temp_k - 5780, 3))
+                    + (-5.2983e-16 * power(stellar_effective_temp_k - 5780, 4)),
+                    0
+                ),
+                0
+            )
+        ) AS hz_outer_conservative_au,
+
+        -- Optimistic inner (Recent Venus)
+        sqrt(
+            greatest(
+                stellar_luminosity_solar / nullif(
+                    1.7763
+                    + (1.4335e-4 * (stellar_effective_temp_k - 5780))
+                    + (3.3954e-9 * power(stellar_effective_temp_k - 5780, 2))
+                    + (-7.6364e-12 * power(stellar_effective_temp_k - 5780, 3))
+                    + (-1.1950e-15 * power(stellar_effective_temp_k - 5780, 4)),
+                    0
+                ),
+                0
+            )
+        ) AS hz_inner_optimistic_au,
+
+        -- Optimistic outer (Early Mars)
+        sqrt(
+            greatest(
+                stellar_luminosity_solar / nullif(
+                    0.3179
+                    + (5.4513e-5 * (stellar_effective_temp_k - 5780))
+                    + (1.5313e-9 * power(stellar_effective_temp_k - 5780, 2))
+                    + (-2.7786e-12 * power(stellar_effective_temp_k - 5780, 3))
+                    + (-4.8997e-16 * power(stellar_effective_temp_k - 5780, 4)),
+                    0
+                ),
+                0
+            )
+        ) AS hz_outer_optimistic_au
+
+    FROM stellar_calcs
+),
+
+planet_scores AS (
+    SELECT
+        *,
+
+        (1 - abs(planet_radius_earth - 1.0) / (planet_radius_earth + 1.0)) AS s_radius,
+        (1 - abs(planet_density_gcm3 - 5.51) / (planet_density_gcm3 + 5.51)) AS s_density,
+        CASE
+            WHEN planet_radius_earth = 0 OR planet_mass_earth = 0 THEN null
+            ELSE (
+                1 - abs(sqrt(planet_mass_earth / planet_radius_earth) - 1.0)
+                / (sqrt(planet_mass_earth / planet_radius_earth) + 1.0)
+            )
+        END AS s_escape,
+        -- compare to earths equilibrium temp which is 255k not 288k
+        (1 - abs(equilibrium_temp_k - 255.0) / (equilibrium_temp_k + 255.0)) AS s_temp,
 
         /*equilibrium temperature:
         Equilibrium temperature is the theoretical surface temperature of a planet
@@ -68,15 +143,6 @@ hz_boundaries AS (
             / sqrt(orbital_semi_major_axis_au)
         ) AS equilibrium_temp_k_final
 
-    FROM stellar_calcs
-),
-
-planet_scores AS (
-    SELECT
-        *,
-
-        sqrt(2 * planet_mass_earth / planet_radius_earth)
-            AS escape_velocity_earth
     FROM hz_boundaries
 
 ),
@@ -85,7 +151,21 @@ scored AS (
     SELECT
         *,
 
-        /*eccentricity risk tier:
+        /* ESI:
+            how similar is this planet to Earth across its key physical properties?
+            It produces a single number where 1.0 means identical to Earth and 0 means completely alien.
+            The reason it multiplies four individual similarities together
+            rather than averaging them is intentional — it's punishing.
+            If any single property is wildly un-Earth-like, the whole score collapses toward zero.
+            A planet that's the right size and density but has a surface temperature of 700K should score very low overall,
+            not average out to something misleadingly moderate.
+        */
+        power(s_radius, 0.57 / 4.0)
+        * power(s_density, 1.07 / 4.0)
+        * power(s_escape, 0.70 / 4.0)
+        * power(s_temp, 5.58 / 4.0) AS esi_score,
+
+        /*orbital stability:
         Eccentricity describes how circular or elliptical a planet's orbit is.
         It's a number between 0 and 1 where:
             0 = perfectly circular orbit.
@@ -99,9 +179,9 @@ scored AS (
         */
         CASE
             WHEN orbital_eccentricity IS null THEN 'Unknown'
-            WHEN orbital_eccentricity < 0.1 THEN 'High'
+            WHEN orbital_eccentricity < 0.1 THEN 'Stable'
             WHEN orbital_eccentricity <= 0.3 THEN 'Moderate'
-            WHEN orbital_eccentricity > 0.3 THEN 'Low'
+            WHEN orbital_eccentricity > 0.3 THEN 'Unstable'
         END AS orbital_stability,
 
         -- hz membership flag
@@ -117,32 +197,6 @@ scored AS (
             ELSE 'outside_hz'
         END AS hz_membership,
 
-        /* ESI:
-            how similar is this planet to Earth across its key physical properties?
-            It produces a single number where 1.0 means identical to Earth and 0 means completely alien.
-            The reason it multiplies four individual similarities together
-            rather than averaging them is intentional — it's punishing.
-            If any single property is wildly un-Earth-like, the whole score collapses toward zero.
-            A planet that's the right size and density but has a surface temperature of 700K should score very low overall,
-            not average out to something misleadingly moderate.
-        */
-        power(
-            1 - abs(planet_radius_earth - 1.0) / (planet_radius_earth + 1.0),
-            0.57
-        )
-        * power(
-            1 - abs(planet_density_gcm3 - 5.51) / (planet_density_gcm3 + 5.51),
-            1.07
-        )
-        * power(
-            1 - abs(escape_velocity_earth - 1.0) / (escape_velocity_earth + 1.0),
-            0.70
-        )
-        * power(
-            1 - abs(equilibrium_temp_k_final - 288.0) / (equilibrium_temp_k_final + 288.0),
-            5.58
-        ) AS esi_score,
-
         /* Habitability zone distance:
         Intuitively this is just normalizing the planet's position onto a -1 to +1 scale where the HZ boundaries are the endpoints.
         */
@@ -155,52 +209,23 @@ scored AS (
 SELECT
     *,
 
-    /* Habitability Tier:
-    This is the editorial layer — combining ESI, HZD, and existing flags into a final habitability verdict.
-    */
     CASE
         WHEN
-            esi_score >= 0.8
-            AND hzd_score BETWEEN -1 AND 1
-            AND planet_radius_earth <= 1.75
-            AND orbital_stability != 'Low'
-            AND stellar_effective_temp_k BETWEEN 3700 AND 7500
-            THEN 'tier_1_strong_candidate'
-        WHEN
-            esi_score >= 0.6
-            AND hz_membership != 'outside_hz'
-            AND planet_radius_earth <= 1.75
-            THEN 'tier_2_moderate_candidate'
-        WHEN
-            hz_membership != 'outside_hz'
-            THEN 'tier_3_in_hz_only'
-        ELSE 'non_habitable'
-    END AS habitability_tier,
-
-    planet_name IN (
-        'Proxima Cen b',
-        'TRAPPIST-1 d',
-        'TRAPPIST-1 e',
-        'TRAPPIST-1 f',
-        'Kepler-452 b',
-        'Kepler-186 f',
-        'LHS 1140 b',
-        'K2-18 b',
-        'Kepler-442 b',
-        'Teegarden''s Star b',
-        'TOI-700 d',
-        'TOI-700 e',
-        'Ross 128 b'
-    ) AS is_notable,
-
-    CASE
-        WHEN
-            esi_score IS NOT null
+            planet_mass_earth IS NOT null
+            AND planet_radius_earth IS NOT null
             AND planet_density_gcm3 IS NOT null
-            THEN 'full'
-        WHEN esi_score IS NOT null
-            THEN 'partial'
-        ELSE 'minimal'
+            AND equilibrium_temp_k IS NOT null
+            AND orbital_semi_major_axis_au IS NOT null
+            AND stellar_luminosity_log_solar IS NOT null
+            AND stellar_effective_temp_k IS NOT null
+            THEN 'Full'
+        WHEN
+            planet_mass_earth IS NOT null
+            AND planet_radius_earth IS NOT null
+            AND orbital_semi_major_axis_au IS NOT null
+            AND stellar_luminosity_log_solar IS NOT null
+            THEN 'Partial'
+        ELSE 'Minimal'
     END AS data_completeness
 
 FROM scored

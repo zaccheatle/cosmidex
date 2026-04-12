@@ -17,26 +17,12 @@ function App() {
     ? planets
     : planets.filter(p => p.habitability_tier === selectedTier)
 
-  const availableTiers = ['all', 'tier_2_moderate_candidate', 'tier_3_in_hz_only', 'non_habitable'].filter(tier => {
+  const availableTiers = ['All', 'Tier 1', 'Tier 2', 'Tier 3', 'Non-Habitable'].filter(tier => {
     if (tier === 'all') return true
     return planets.filter(p => p.habitability_tier === tier).length > 0
   })
 
-  const tierDescriptions = {
-    'all': 'Show all planets',
-    'tier_2_moderate_candidate': 'Planets with good ESI scores inside the habitable zone — strong Earth-like candidates',
-    'tier_3_in_hz_only': 'Planets inside the habitable zone but less Earth-like physically',
-    'non_habitable': 'Planets outside the habitable zone or gas giants'
-  }
-
   const currentPlanet = filteredPlanets[currentIndex]
-
-  const tierLabels = {
-    'tier_1_strong_candidate': 'Tier 1',
-    'tier_2_moderate_candidate': 'Tier 2',
-    'tier_3_in_hz_only': 'Tier 3',
-    'non_habitable': 'Non-Habitable'
-  }
 
   const hzLabels = {
     'conservative_hz': 'Conservative',
@@ -151,11 +137,11 @@ function App() {
                   <p className="section-label">Habitability</p>
                   <p>Habitability Tier<Tooltip text="Our habitability classification. Tier 1 = strong Earth analog — rocky, in the conservative habitable zone, Earth-like ESI, stable orbit around a G or K type star. Tier 2 = moderate candidate with good ESI and in the habitable zone. Tier 3 = in the habitable zone but less Earth-like physically. Non-habitable = outside the zone or gas giant." />
                     : <span>{tierLabels[currentPlanet.habitability_tier] || currentPlanet.habitability_tier}</span></p>
-                  <p>Theoretical Surface Climate<Tooltip text="Theoretical climate adapted from the Köppen Climate Classification — the scientific standard for Earth climate zones, applied here using equilibrium temperature as a proxy. Class A (Tropical) = above 18°C, warm year-round. Class B (Arid) = above 0°C but too hot for liquid water. Class C (Temperate) = 0°C to 18°C, liquid water possible. Class D (Continental) = -15°C to 0°C, seasonal ice likely. Class E (Polar) = -40°C to -15°C, similar to Earth polar regions. Class EF (Ice Cap) = below -40°C, permanently frozen. Class X = above 100°C, surface water impossible." />
+                  <p>Earth Climate Zone<Tooltip text="Theoretical climate adapted from the Köppen Climate Classification — the scientific standard for Earth climate zones, applied here using equilibrium temperature as a proxy. Class A (Tropical) = above 18°C, warm year-round. Class B (Arid) = above 0°C but too hot for liquid water. Class C (Temperate) = 0°C to 18°C, liquid water possible. Class D (Continental) = -15°C to 0°C, seasonal ice likely. Class E (Polar) = -40°C to -15°C, similar to Earth polar regions. Class EF (Ice Cap) = below -40°C, permanently frozen. Class X = above 100°C, surface water impossible." />
                     : <span>{currentPlanet.temperature_description}</span></p>
                   <p>Habitable Zone<Tooltip text="The conservative zone is where liquid water is almost certainly stable. The optimistic zone extends further — water is possible but less certain." />
                     : <span>{hzLabels[currentPlanet.hz_membership] || currentPlanet.hz_membership}</span></p>
-                  <p>Theoretical Surface Temperature<Tooltip text="Theoretical surface temperature using equilibrium temp which assumes no atmosphere. Earth's equilibrium temp is -5°C / 23°F but actual average is 15°C / 59°F due to greenhouse warming." />
+                  <p>Planet Equilibrium Temperature<Tooltip text="The equilibrium temperature of a planet is a theoretical value representing the temperature it would have if it were a perfect blackbody heated only by its parent star, without an atmosphere or greenhouse effect. Earth's equilibrium temp is -5°C / 23°F but actual average is 15°C / 59°F due to greenhouse warming." />
                     : <span>{currentPlanet.equilibrium_temp_fahrenheit}°F | {currentPlanet.equilibrium_temp_celsius}°C</span></p>
                   <p>Habitable Zone Distance<Tooltip text="Where the planet sits within its star's habitable zone. 0 = perfect center, -1 = inner edge, +1 = outer edge. Beyond ±1 means outside the zone." />
                     : <span>{currentPlanet.hzd_score ? currentPlanet.hzd_score.toFixed(3) : 'unknown'}</span></p>

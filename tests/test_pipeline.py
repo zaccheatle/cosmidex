@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 from src.exoplanet_extractor import build_query
-from src.exoplanet_loader import load_db
+from src.db_loader import load_db
 
 load_dotenv()
 

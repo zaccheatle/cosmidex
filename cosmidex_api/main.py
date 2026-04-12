@@ -13,7 +13,7 @@ import psycopg2.extras
 from database import get_db, test_connection
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 
 # ######################################
 # DEFINE HELPER FUNCTIONS
@@ -64,6 +64,21 @@ app.add_middleware(
 )
 
 
+# Home page
+@app.get("/", response_class=HTMLResponse)
+def home():
+    return """
+    <html>
+        <head>
+            <title>CosmiDex API Homepage</title>
+        </head>
+        <body>
+            <h1>Welcome to the CosmiDex API, view available endpoints here: <a href="/docs">API Documentation</a></h1>
+        </body>
+    </html>
+    """
+
+
 # GET planets endpoint
 @app.get("/planets")
 def get_planets(db=Depends(get_db)):
@@ -79,31 +94,27 @@ def get_planets(db=Depends(get_db)):
             star_type_description,
             distance_light_years,
             equilibrium_temp_celsius,
-            esi_score,
-            is_notable
+            esi_score
         FROM marts.mart_planet_profile
-        ORDER BY is_notable DESC, esi_score DESC NULLS LAST
+        ORDER BY esi_score DESC NULLS LAST
     """)
     rows = cursor.fetchall()
     cursor.close()
     return decimal_response(rows)
 
 
-# GET notable planets list endpoint
-@app.get("/planets/notable/list")
-def get_notable_planets(db=Depends(get_db)):
+# GET habitable planets list endpoint
+@app.get("/planets/habitable/list")
+def get_habitable_planets(db=Depends(get_db)):
     """"""
     cursor = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cursor.execute("""
         SELECT
             pp.*,
             ip.image_prompt,
-            pi.image_url
         FROM marts.mart_planet_profile AS pp
         LEFT JOIN marts.mart_planet_image_prompt AS ip
             ON pp.planet_name = ip.planet_name
-        LEFT JOIN marts.planet_images AS pi ON pp.planet_name = pi.planet_name
-        WHERE pp.is_notable = true
         ORDER BY pp.esi_score DESC NULLS LAST
     """)
     rows = cursor.fetchall()
@@ -127,8 +138,7 @@ def get_planets_by_tier(tier: str, db=Depends(get_db)):
             star_type_description,
             distance_light_years,
             equilibrium_temp_celsius,
-            esi_score,
-            is_notable
+            esi_score
         FROM marts.mart_planet_profile
         WHERE habitability_tier = %s
         ORDER BY esi_score DESC NULLS LAST
@@ -156,8 +166,7 @@ def search_planets(query: str, db=Depends(get_db)):
             star_type_description,
             distance_light_years,
             equilibrium_temp_celsius,
-            esi_score,
-            is_notable
+            esi_score
         FROM marts.mart_planet_profile
         WHERE planet_name ILIKE %s
         ORDER BY esi_score DESC NULLS LAST
@@ -181,13 +190,10 @@ def get_planet(planet_name: str, db=Depends(get_db)):
             hs.stellar_luminosity_solar,
             hs.hz_inner_conservative_au,
             hs.hz_outer_conservative_au,
-            hs.escape_velocity_earth,
-            pi.image_url
+            hs.escape_velocity_earth
         FROM marts.mart_planet_profile AS pp
         LEFT JOIN marts.mart_habitability_scores AS hs 
             ON pp.planet_name = hs.planet_name
-        LEFT JOIN marts.planet_images AS pi 
-            ON pp.planet_name = pi.planet_name
         WHERE pp.planet_name = %s
     """,
         (planet_name,),

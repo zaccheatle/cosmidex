@@ -1,5 +1,5 @@
 """
-Docstring for planet_extractor
+Module for scraping the NASA exoplanet archive's PScomppars dataset.
 """
 
 # Import dependencies
