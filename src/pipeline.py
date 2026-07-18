@@ -33,7 +33,7 @@ def run_pipeline():
     if nasa_url:
         nasa_df = build_query(
             base_url=nasa_url,
-            format="csv",
+            response_format="csv",
             custom_query="SELECT * FROM pscomppars",
         )
 

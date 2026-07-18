@@ -209,3 +209,11 @@ __marimo__/
 
 # csv
 *.csv
+
+
+# dagster
+.dagster/
+.tmp_dagster_home*/
+dagster.yaml
+logs/
+storage/
