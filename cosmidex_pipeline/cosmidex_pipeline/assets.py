@@ -1,7 +1,6 @@
 import logging
 import os
 import sys
-from dataclasses import asdict
 
 import pandas as pd
 from dagster import asset
@@ -53,16 +52,12 @@ def validated_nasa_dict(raw_nasa_data: pd.DataFrame) -> pd.DataFrame:
         ValueError: If valid_records is empty.
     """
 
-    valid_records, invalid_records, new_fields = validate_records(
-        raw_nasa_data, ExoplanetRecord
-    )
+    valid_records, invalid_records = validate_records(raw_nasa_data, ExoplanetRecord)
     if len(valid_records) == 0:
         raise ValueError("There are 0 valid records to process!!!")
-
-    logging.info(f"Valid records: {len(valid_records)}")
 
     if len(invalid_records) > 0:
         logging.warning(f"Invalid records: {len(invalid_records)}")
 
-    df = pd.DataFrame([asdict(record) for record in valid_records])
+    df = pd.DataFrame(valid_records)
     return df
