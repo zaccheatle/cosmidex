@@ -13,3 +13,21 @@ CREATE TABLE IF NOT EXISTS marts.planet_images (
     generation_model VARCHAR(100),
     generated_at TIMESTAMP DEFAULT now()
 );
+
+CREATE TABLE IF NOT EXISTS raw.pipeline_state (
+    pipeline_name VARCHAR PRIMARY KEY,
+    last_file_hash VARCHAR,
+    last_run_timestamp TIMESTAMP,
+    last_planet_count INT
+);
+
+CREATE TABLE IF NOT EXISTS raw.pipeline_audit (
+    id SERIAL PRIMARY KEY,
+    pipeline_name VARCHAR NOT NULL,
+    run_timestamp TIMESTAMP DEFAULT now(),
+    changed BOOLEAN NOT NULL,
+    loaded BOOLEAN NOT NULL,
+    planet_count INT,
+    new_planet_count INT,
+    new_planets TEXT []
+);
