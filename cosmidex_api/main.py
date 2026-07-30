@@ -121,7 +121,7 @@ def get_planets(
     ),
     min_esi: float | None = Query(None, ge=0, le=1),
     max_esi: float | None = Query(None, ge=0, le=1),
-    limit: int = Query(50, ge=1, le=500),
+    limit: int = Query(25, ge=1, le=500),
     offset: int = Query(0, ge=0),
 ):
     """"""
@@ -258,10 +258,16 @@ def get_planet(planet_name: str, db=Depends(get_db)):
             hs.stellar_luminosity_solar,
             hs.hz_inner_conservative_au,
             hs.hz_outer_conservative_au,
-            hs.s_escape
+            hs.s_escape,
+            pi.image_url,
+            pd.description
         FROM marts.mart_planet_profile AS pp
         LEFT JOIN marts.mart_habitability_scores AS hs
             ON pp.planet_name = hs.planet_name
+        LEFT JOIN marts.planet_images AS pi
+            ON pp.planet_name = pi.planet_name
+        LEFT JOIN marts.planet_descriptions AS pd
+            ON pp.planet_name = pd.planet_name
         WHERE pp.planet_name = %s
     """,
         (planet_name,),

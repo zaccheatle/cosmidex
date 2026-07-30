@@ -191,25 +191,36 @@ descriptions AS (
         -- TRAVEL DESCRIPTIONS ------------------------------------------------------------------
         CASE
             WHEN shuttle_travel_years < 1000
-                THEN round(shuttle_travel_years)::text || ' years'
+                THEN round(shuttle_travel_years)::text || ' Earth years'
             WHEN shuttle_travel_years < 1000000
-                THEN round(shuttle_travel_years / 1000)::text || ' thousand years'
+                THEN round(shuttle_travel_years / 1000)::text || ' thousand Earth years'
             WHEN shuttle_travel_years < 1000000000
-                THEN round(shuttle_travel_years / 1000000)::text || ' million years'
+                THEN round(shuttle_travel_years / 1000000)::text || ' million Earth years'
             ELSE
-                round(shuttle_travel_years / 1000000000)::text || ' billion years'
+                round(shuttle_travel_years / 1000000000)::text || ' billion Earth years'
         END AS shuttle_travel_description,
 
         CASE
             WHEN star_distance_light_years < 1
                 THEN round(star_distance_light_years * 365.25::numeric, 0)::text || ' Earth days'
             WHEN star_distance_light_years < 100
-                THEN round(star_distance_light_years::numeric, 1)::text || ' years'
+                THEN round(star_distance_light_years::numeric, 1)::text || ' Earth years'
             WHEN star_distance_light_years < 1000
-                THEN round(star_distance_light_years::numeric, 0)::text || ' years'
+                THEN round(star_distance_light_years::numeric, 0)::text || ' Earth years'
             ELSE
-                round(star_distance_light_years::numeric, 0)::text || ' years'
-        END AS radio_signal_description
+                round(star_distance_light_years::numeric, 0)::text || ' Earth years'
+        END AS radio_signal_description,
+
+        CASE
+            WHEN voyager_travel_years < 1000
+                THEN round(voyager_travel_years)::text || ' Earth years'
+            WHEN voyager_travel_years < 1000000
+                THEN round(voyager_travel_years / 1000)::text || ' thousand Earth years'
+            WHEN voyager_travel_years < 1000000000
+                THEN round(voyager_travel_years / 1000000)::text || ' million Earth years'
+            ELSE
+                round(voyager_travel_years / 1000000000)::text || ' billion Earth years'
+        END AS voyager_travel_description
 
     FROM travel_times
 ),
@@ -336,6 +347,10 @@ SELECT
     host_star_name,
     discovery_year,
     discovery_method,
+    discovery_facility,
+    discovery_telescope,
+    discovery_instrument,
+    discovery_locale,
     data_completeness,
 
     -- planet fields
@@ -359,7 +374,9 @@ SELECT
     orbital_eccentricity,
     orbital_stability,
     orbital_distance_description,
+    orbital_semi_major_axis_au,
     year_length,
+    orbital_period_days,
 
     -- stellar fields 
     stellar_effective_temp_k,
@@ -381,5 +398,6 @@ SELECT
 
     -- misc fields
     shuttle_travel_description,
+    voyager_travel_description,
     radio_signal_description
 FROM earth_comparisons

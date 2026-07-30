@@ -8,7 +8,7 @@
 
 **CosmiDex: A Codex for the Cosmos** — a Pokédex-style cosmic explorer app that displays exoplanets as interactive cards with AI-generated artwork, Earth-relative stats, habitability scores, and experiential descriptions. Built as a full-stack data engineering portfolio project covering ingestion, transformation, API, frontend, orchestration, and AI layers.
 
-Currently focused on NASA's confirmed exoplanet catalog (PSCompPars dataset), planets ordered by `esi_score DESC`. (Note: an earlier `is_notable` curation flag for 13 manually-flagged famous planets was intentionally removed — ordering is ESI-only now.)
+Currently focused on NASA's confirmed exoplanet catalog (PSCompPars dataset), displaying the **top 25 planets** ordered by `esi_score DESC`. (Note: an earlier `is_notable` curation flag for 13 manually-flagged famous planets was intentionally removed — ordering is ESI-only now.)
 
 ---
 
@@ -24,7 +24,7 @@ Currently focused on NASA's confirmed exoplanet catalog (PSCompPars dataset), pl
 | API | FastAPI |
 | Frontend | React + Vite |
 | Image storage | AWS S3 |
-| Image generation | OpenAI DALL-E 3 |
+| Image generation | OpenAI gpt-image-1-mini |
 | Description generation | OpenAI GPT-4o |
 | Infrastructure | Terraform (AWS) |
 | CI/CD | GitHub Actions |
@@ -68,7 +68,7 @@ cosmidex/
 │   ├── exoplanet_extractor.py   ← NASA TAP query builder
 │   ├── db_loader.py             ← SQLAlchemy Postgres loader
 │   ├── pipeline.py              ← original run_pipeline()
-│   ├── generate_images.py       ← DALL-E 3 image generation
+│   ├── generate_images.py       ← gpt-image-1-mini image generation
 │   └── generate_descriptions.py ← GPT-4o descriptions (in progress)
 ├── sql/                         ← raw SQL migrations
 │   └── pipeline_state.sql       ← pipeline state tracking table
@@ -97,7 +97,7 @@ cosmidex/
 ### Marts layer (Gold) — dbt materialized views
 - `marts.mart_habitability_scores` — ESI score, HZD score, habitability tier, habitable zone membership
 - `marts.mart_planet_profile` — full display stats, descriptions, Earth comparisons, travel times
-- `marts.mart_planet_image_prompt` — AI image prompts for DALL-E 3
+- `marts.mart_planet_image_prompt` — AI image prompts for gpt-image-1-mini
 
 ### Application tables (not dbt managed)
 - `marts.planet_images` — S3 image URLs per planet
@@ -180,7 +180,7 @@ Full display model combining staging + habitability scores + derived description
 - Orbital distance, year length, season, weather estimations
 
 ### mart_planet_image_prompt.sql (Gold — materialized view)
-- `image_prompt` — concatenated DALL-E 3 prompt string
+- `image_prompt` — concatenated gpt-image-1-mini prompt string
 
 ---
 
@@ -214,11 +214,11 @@ Single page app, no routing. Layout:
 │    AI Planet Image      │  Stats in 2-column grid  │
 │    (fills left half)    │  (scrollable)            │
 ├─────────────────────────┴─────────────────────────┤
-│  ← Previous    1 / 50    Next →                   │
+│  ← Previous    1 / 25    Next →                   │
 └───────────────────────────────────────────────────┘
 ```
 
-Stats organized into sections: Identity, Solar System, Orbit, Planet, Habitability.
+Stats organized into sections: Identity (discovery year/method), Planet, Habitability, Orbit, Host System.
 
 Planned additions:
 - Filter controls (tier, planet type, ESI range)
@@ -295,7 +295,7 @@ No ECS — Dagster Cloud Serverless handles orchestration, FastAPI runs on a sin
 
 ### M4 — Frontend
 1. Audit and update frontend for API changes
-2. Add filter controls for top 50
+2. Add filter controls for top 25
 3. Add sort controls
 4. Add chat UI shell component (prep for M7)
 5. Add loading states and error handling
@@ -331,7 +331,7 @@ No ECS — Dagster Cloud Serverless handles orchestration, FastAPI runs on a sin
 | Change detection | File-level hash | Skip pipeline entirely if no changes, log new planets if changed |
 | Dataclass scope | PK validation only | All NASA columns pass through to Bronze unchanged |
 | Generic validator | parse_row/validate_records accept any dataclass | Reusable for HWC, solar system bodies, future datasets |
-| Display scope | ESI-ranked planets | is_notable curation flag was removed; ordering is ESI-only |
+| Display scope | Top 25 ESI-ranked planets | is_notable curation flag was removed; ordering is ESI-only. Reduced from 50 to 25 on 2026-07-30 |
 | Orchestration | Dagster Cloud Serverless | Avoids ECS complexity, free tier covers solo project |
 | Streaming vs batch | Batch | NASA data updates weekly, streaming adds no value |
 | RAG vs MCP | Hybrid both | MCP for structured SQL queries, RAG for unstructured research docs |

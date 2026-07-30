@@ -11,6 +11,10 @@ SELECT
     hostname::varchar(150) AS host_star_name,
     disc_year::varchar(4) AS discovery_year,
     discoverymethod::varchar(150) AS discovery_method,
+    disc_facility::varchar(150) AS discovery_facility,
+    disc_telescope::varchar(150) AS discovery_telescope,
+    disc_instrument::varchar(150) AS discovery_instrument,
+    disc_locale::varchar(150) AS discovery_locale,
     sy_dist::numeric AS distance_parsecs,
 
     -- planet physical

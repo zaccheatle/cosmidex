@@ -54,6 +54,54 @@ body {
   padding: 0 1.5rem;
   background: #12121a;
   align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.sort-section {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.sort-section select {
+  background: #1e1e2e;
+  color: #ffffff;
+  border: 1px solid #2e2e4e;
+  border-radius: 4px;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.85rem;
+}
+
+.sort-dir-btn {
+  background: #1e1e2e;
+  color: #8888aa;
+  border: 1px solid #2e2e4e;
+  border-radius: 4px;
+  padding: 0.35rem 0.6rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.sort-dir-btn:hover {
+  background: #2e2e4e;
+  color: #ffffff;
+}
+
+.state-message {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  color: #8888aa;
+  padding: 2rem;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.state-error {
+  color: #ff6b6b;
 }
 
 .tier-filter {
@@ -129,9 +177,10 @@ body {
   padding: 1.5rem;
   overflow-y: auto;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0 2rem;
+  grid-template-columns: 1.2fr 1fr;
+  column-gap: 1.5rem;
   align-content: start;
+  align-items: baseline;
   min-height: 0;
 }
 
@@ -142,6 +191,14 @@ body {
   margin-bottom: 0.5rem;
   color: #4a9eff;
   text-shadow: 0 0 8px rgba(74, 158, 255, 0.6);
+}
+
+.planet-description {
+  grid-column: 1 / -1;
+  font-style: italic;
+  color: #bbbbdd;
+  line-height: 1.6;
+  margin-bottom: 0.75rem;
 }
 
 .planet-stats hr {
@@ -163,7 +220,6 @@ body {
 }
 
 .planet-stats p.section-label {
-  grid-column: 1 / -1;
   font-size: 1.0rem;
   text-transform: uppercase;
   letter-spacing: 0.15em;
@@ -171,6 +227,19 @@ body {
   font-weight: 700;
   color: #bf5fff;
   text-shadow: 0 0 8px rgba(191, 95, 255, 0.6);
+}
+
+.planet-stats p.context-label {
+  color: #5f8fae;
+  text-shadow: none;
+}
+
+.planet-stats p.context-chunk {
+  color: #6c6c8a;
+  font-size: 0.92rem;
+  font-style: italic;
+  padding-left: 1rem;
+  border-left: 1px dashed #2e2e4e;
 }
 
 .full-width {
