@@ -11,17 +11,17 @@ function ChatShell() {
       <button
         className="chat-toggle"
         onClick={() => setOpen(o => !o)}
-        aria-label={open ? 'Close chat' : 'Open chat'}
+        aria-label={open ? 'Close Cosmo chat' : 'Open Cosmo chat'}
       >
-        {open ? '✕' : '💬'}
+        {open ? '✕' : '🌌'}
       </button>
 
       {open && (
         <div className="chat-panel">
-          <div className="chat-header">Ask CosmiDex</div>
+          <div className="chat-header">🌌 Ask Cosmo</div>
           <div className="chat-messages">
             <div className="chat-message chat-message-assistant">
-              Chat is coming soon — ask me about any exoplanet once this is wired up.
+              🌌 Hi, I'm Cosmo! Chat is coming soon — ask me about any exoplanet once this is wired up.
             </div>
           </div>
           <form
@@ -33,7 +33,7 @@ function ChatShell() {
           >
             <input
               type="text"
-              placeholder="Coming soon..."
+              placeholder="Ask Cosmo..."
               value={draft}
               onChange={e => setDraft(e.target.value)}
               disabled
