@@ -1,0 +1,75 @@
+version: 2
+
+models:
+  - name: mart_habitability_scores
+    description: >
+      ESI/HZD habitability scoring for planets with sufficient physical data
+      (has_minimum_habitability_data = true in stg_exoplanets). One row per
+      qualifying planet — planets missing critical fields are excluded.
+    columns:
+      - name: planet_name
+        description: Unique identifier for the planet, joined back to stg_exoplanets.
+        data_tests:
+          - unique
+          - not_null
+      - name: esi_score
+        description: Earth Similarity Index — weighted product of radius/density/escape velocity/temperature similarity to Earth. 1.0 = identical to Earth.
+        data_tests:
+          - accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 1
+      - name: hz_membership
+        description: conservative_hz / optimistic_hz / outside_hz.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['conservative_hz', 'optimistic_hz', 'outside_hz']
+      - name: data_completeness
+        description: Full / Partial / Minimal, based on how many of the 7 key habitability fields are present.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Full', 'Partial', 'Minimal']
+
+  - name: mart_planet_profile
+    description: >
+      Full display model combining staging data, habitability scores, and
+      derived experiential descriptions (Earth comparisons, travel times,
+      climate/star descriptions). One row per exoplanet — LEFT JOINs
+      mart_habitability_scores, so row count matches stg_exoplanets exactly.
+    columns:
+      - name: planet_name
+        description: Unique identifier for the planet.
+        data_tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_exoplanets')
+                field: planet_name
+      - name: habitability_tier
+        description: Tier 1 / Tier 2 / Tier 3 / Non-Habitable classification.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Tier 1', 'Tier 2', 'Tier 3', 'Non-Habitable']
+      - name: esi_score
+        description: Earth Similarity Index, carried through from mart_habitability_scores.
+        data_tests:
+          - accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 1
+    data_tests:
+      - equal_rowcount:
+          arguments:
+            compare_model: ref('stg_exoplanets')
+
+  - name: mart_planet_image_prompt
+    description: DALL-E 3 image generation prompts, one row per exoplanet.
+    columns:
+      - name: planet_name
+        data_tests:
+          - unique
+          - not_null

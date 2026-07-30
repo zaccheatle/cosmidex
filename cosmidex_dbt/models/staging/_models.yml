@@ -1,0 +1,24 @@
+version: 2
+
+models:
+  - name: stg_exoplanets
+    description: >
+      Cleaned, renamed columns from raw.exoplanets, selecting fields critical
+      for defining planet habitability. One row per confirmed exoplanet.
+    columns:
+      - name: planet_name
+        description: NASA pl_name — unique identifier for the planet.
+        data_tests:
+          - unique
+          - not_null
+      - name: host_star_name
+        description: NASA hostname — the planet's host star. Not unique (multi-planet systems).
+        data_tests:
+          - not_null
+      - name: has_minimum_habitability_data
+        description: True if radius, mass, orbital distance, stellar luminosity, and stellar temp are all present.
+        data_tests:
+          - not_null
+
+  - name: stg_hwc
+    description: Cleaned, renamed columns from raw.hwc (Habitable Worlds Catalog).

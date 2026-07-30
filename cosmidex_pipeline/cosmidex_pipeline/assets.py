@@ -178,7 +178,10 @@ def load_bronze(validated_nasa_dict: pd.DataFrame, check_file_hash: dict) -> dic
     with engine.begin() as conn:
         conn.execute(sqlalchemy.text("DROP TABLE IF EXISTS raw.exoplanets CASCADE"))
 
-    load_db(validated_nasa_dict, schema_name="raw", table_name="exoplanets")
+    df_to_load = validated_nasa_dict.copy()
+    df_to_load["loaded_at"] = pd.Timestamp.now()
+
+    load_db(df_to_load, schema_name="raw", table_name="exoplanets")
 
     with engine.begin() as conn:
         conn.execute(

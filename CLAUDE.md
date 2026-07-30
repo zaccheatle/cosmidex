@@ -1,6 +1,6 @@
 # CosmiDex
 
-A Pokédex-style cosmic explorer app: NASA confirmed exoplanets (PSCompPars dataset) shown as interactive cards with AI-generated artwork, Earth-relative stats, habitability scores, and experiential descriptions. Solo full-stack data engineering portfolio project — displays top 50 planets ordered by `is_notable DESC, esi_score DESC`.
+A Pokédex-style cosmic explorer app: NASA confirmed exoplanets (PSCompPars dataset) shown as interactive cards with AI-generated artwork, Earth-relative stats, habitability scores, and experiential descriptions. Solo full-stack data engineering portfolio project — planets ordered by `esi_score DESC` (Earth Similarity Index). Note: an earlier `is_notable` curation flag was removed; ordering is ESI-only now.
 
 ## Stack
 

@@ -6,6 +6,10 @@ sources:
     schema: raw
     tables:
     - name: exoplanets
-      description: "Raw exoplanet data loaded form NASA PSCompPars dataset."
+      description: "Raw exoplanet data loaded from NASA PSCompPars dataset. Full reload on every changed pipeline run."
+      loaded_at_field: loaded_at
+      freshness:
+        warn_after: {count: 10, period: day}
+        error_after: {count: 30, period: day}
     - name: hwc
       description: "Raw habitable exoplanet data loaded from the Habitable Worlds Catalog dataset."

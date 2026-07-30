@@ -8,7 +8,7 @@
 
 **CosmiDex: A Codex for the Cosmos** — a Pokédex-style cosmic explorer app that displays exoplanets as interactive cards with AI-generated artwork, Earth-relative stats, habitability scores, and experiential descriptions. Built as a full-stack data engineering portfolio project covering ingestion, transformation, API, frontend, orchestration, and AI layers.
 
-Currently focused on NASA's confirmed exoplanet catalog (PSCompPars dataset) displaying the **top 50 planets** ordered by `is_notable DESC, esi_score DESC`.
+Currently focused on NASA's confirmed exoplanet catalog (PSCompPars dataset), planets ordered by `esi_score DESC`. (Note: an earlier `is_notable` curation flag for 13 manually-flagged famous planets was intentionally removed — ordering is ESI-only now.)
 
 ---
 
@@ -169,7 +169,6 @@ Selects and renames critical columns from `raw.exoplanets`:
 - `esi_score` — Earth Similarity Index (0-1)
 - `hzd_score` — Habitable Zone Distance (-1 to +1)
 - `habitability_tier` — tier_1/tier_2/tier_3/non_habitable
-- `is_notable` — boolean, 13 manually flagged famous planets
 - `data_completeness` — full/partial/minimal
 
 ### mart_planet_profile.sql (Gold — materialized view)
@@ -191,8 +190,8 @@ Base URL: `http://127.0.0.1:8000` (local)
 
 | Method | Endpoint | Description |
 |---|---|---|
-| GET | `/planets` | Top 50 planets ordered by `is_notable DESC, esi_score DESC` |
-| GET | `/planets/notable/list` | 13 notable planets with image_url |
+| GET | `/planets` | Planets ordered by `esi_score DESC` |
+| GET | `/planets/habitable/list` | All planets with habitability data joined to image_prompt |
 | GET | `/planets/tier/{tier}` | Filter by habitability tier |
 | GET | `/planets/search/{query}` | ILIKE search by planet name |
 | GET | `/planets/{planet_name}` | Single planet full detail |
@@ -226,26 +225,6 @@ Planned additions:
 - Sort controls
 - Chat UI shell (prep for M7)
 - Loading skeletons and error states
-
----
-
-## The 13 Notable Planets
-
-| Planet | Tier | ESI | Notes |
-|---|---|---|---|
-| TRAPPIST-1 d | Tier 2 | 0.799 | Most Earth-like by ESI |
-| Teegarden's Star b | Tier 2 | 0.759 | Red dwarf |
-| TOI-700 e | Tier 2 | 0.741 | Red dwarf |
-| Ross 128 b | Tier 2 | 0.707 | Red dwarf |
-| TOI-700 d | Tier 2 | 0.681 | Red dwarf |
-| TRAPPIST-1 e | Tier 3 | 0.562 | Red dwarf |
-| Kepler-452 b | Tier 3 | 0.432 | Sun-like star |
-| Kepler-442 b | Tier 3 | 0.417 | Orange dwarf |
-| K2-18 b | Tier 3 | 0.389 | Hycean candidate, JWST biosignature |
-| Proxima Cen b | Tier 3 | 0.375 | Closest exoplanet at 4.2 ly |
-| TRAPPIST-1 f | Tier 3 | 0.357 | Red dwarf |
-| LHS 1140 b | Tier 3 | 0.264 | Red dwarf |
-| Kepler-186 f | Tier 3 | 0.163 | First Earth-sized planet in HZ |
 
 ---
 
@@ -308,7 +287,7 @@ No ECS — Dagster Cloud Serverless handles orchestration, FastAPI runs on a sin
 5. Add full dbt documentation and exposures
 
 ### M3 — API
-1. Update /planets to return top 50 (is_notable DESC, esi_score DESC LIMIT 50)
+1. Align /planets response fields with current mart_planet_profile columns; add LIMIT/pagination
 2. Add advanced search and filter params
 3. Add /audit/latest endpoint
 4. Add API key authentication
@@ -352,7 +331,7 @@ No ECS — Dagster Cloud Serverless handles orchestration, FastAPI runs on a sin
 | Change detection | File-level hash | Skip pipeline entirely if no changes, log new planets if changed |
 | Dataclass scope | PK validation only | All NASA columns pass through to Bronze unchanged |
 | Generic validator | parse_row/validate_records accept any dataclass | Reusable for HWC, solar system bodies, future datasets |
-| Display scope | Top 50 planets | Curated experience, notable planets always included |
+| Display scope | ESI-ranked planets | is_notable curation flag was removed; ordering is ESI-only |
 | Orchestration | Dagster Cloud Serverless | Avoids ECS complexity, free tier covers solo project |
 | Streaming vs batch | Batch | NASA data updates weekly, streaming adds no value |
 | RAG vs MCP | Hybrid both | MCP for structured SQL queries, RAG for unstructured research docs |
