@@ -1,3 +1,10 @@
+"""Generic dataclass validation used by the Dagster pipeline's validated_nasa_data asset.
+
+Validates primary keys only — the dataclasses here check that pl_name/hostname (or
+equivalent PK fields) exist and are populated; broader schema validation is dbt's job
+downstream.
+"""
+
 import logging
 from dataclasses import dataclass, field, fields
 from typing import Any, TypeVar
@@ -11,6 +18,8 @@ logging.basicConfig(
 
 @dataclass
 class ExoplanetRecord:
+    """Primary-key schema for a raw NASA exoplanet record."""
+
     pl_name: str = field(metadata={"pk": True})
     hostname: str = field(metadata={"pk": True})
 
@@ -20,8 +29,7 @@ T = TypeVar("T", bound=Any)
 
 
 def parse_row(row: dict, data_class: type[T]) -> T:
-    """
-    Parse a dataframe row and validate pks against the appropriate dataclass.
+    """Parse a dataframe row and validate pks against the appropriate dataclass.
 
     Args:
         row (dict): Dataframe row.
@@ -55,15 +63,14 @@ def parse_row(row: dict, data_class: type[T]) -> T:
 def validate_records(
     df: pd.DataFrame, data_class: type[T]
 ) -> tuple[list[T], list[dict]]:
-    """
-    Validate dataframe records against the corresponding dataclass.
+    """Validate dataframe records against the corresponding dataclass.
 
     Args:
-        Dataframe (pd.DataFrame): Pandas dataframe with raw source data.
-        data_class (DataClassInstance): Dataclass object.
+        df (pd.DataFrame): Pandas dataframe with raw source data.
+        data_class (type[T]): The generic dataclass schema.
 
     Returns:
-        Tuple (list[t], list[dict]): Lists of valid and invalid record dicts.
+        tuple[list[T], list[dict]]: Lists of valid and invalid record dicts.
 
     Raises:
         ValueError: If error parsing and appending row.

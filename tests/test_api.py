@@ -1,8 +1,5 @@
-"""
-Tests for the CosmiDex FastAPI layer, run against the live Postgres instance.
-"""
+"""Tests for the CosmiDex FastAPI layer, run against the live Postgres instance."""
 
-# Import dependencies
 import os
 import sys
 

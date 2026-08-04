@@ -7,8 +7,8 @@ exposures:
     maturity: medium
     url: http://127.0.0.1:8000
     description: >
-      FastAPI service exposing planet data endpoints (/planets, /planets/tier/{tier},
-      /planets/search/{query}, /planets/{planet_name}) to the frontend.
+      FastAPI service exposing planet data endpoints (list/search/filter by tier,
+      single-planet detail, latest pipeline audit) to the frontend.
     depends_on:
       - ref('mart_planet_profile')
       - ref('mart_habitability_scores')

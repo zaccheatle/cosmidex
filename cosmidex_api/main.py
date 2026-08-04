@@ -1,8 +1,5 @@
-"""
-Planetary data api layer
-"""
+"""Planetary data api layer."""
 
-# import dependencies
 import datetime
 import json
 import logging
@@ -27,7 +24,11 @@ load_dotenv()
 
 
 class DecimalEncoder(json.JSONEncoder):
-    """"""
+    """JSON encoder that serializes Decimal and date/datetime values.
+
+    Postgres numeric columns come back as Decimal and don't JSON-serialize by
+    default; this encoder converts them (and dates) to JSON-safe types.
+    """
 
     def default(self, obj):  # type: ignore
         if isinstance(obj, Decimal):
@@ -38,7 +39,14 @@ class DecimalEncoder(json.JSONEncoder):
 
 
 def decimal_response(data):
-    """"""
+    """Serialize query result data to a JSON response via DecimalEncoder.
+
+    Args:
+        data: A dict, list, or RealDictRow (or list thereof) from a db query.
+
+    Returns:
+        JSONResponse: The data serialized as a JSON response.
+    """
     return JSONResponse(content=json.loads(json.dumps(data, cls=DecimalEncoder)))
 
 
@@ -67,7 +75,17 @@ PLANET_SUMMARY_COLUMNS = """
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """"""
+    """Verify the database is reachable on startup and log shutdown.
+
+    Args:
+        app (FastAPI): The FastAPI application instance.
+
+    Yields:
+        None.
+
+    Raises:
+        RuntimeError: If the database connection check fails on startup.
+    """
     if not test_connection():
         raise RuntimeError("Database connection failed")
     logging.info("Database connection verified")
@@ -82,11 +100,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 # ######################################
 
 
-# Initialize app
 app = FastAPI(lifespan=lifespan)
 
 
-# Add middleware to allow frontend requests to API
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
@@ -95,9 +111,13 @@ app.add_middleware(
 )
 
 
-# Home page
 @app.get("/", response_class=HTMLResponse)
 def home():
+    """Serve a minimal HTML landing page linking to the API docs.
+
+    Returns:
+        str: Raw HTML for the homepage.
+    """
     return """
     <html>
         <head>
@@ -110,7 +130,6 @@ def home():
     """
 
 
-# GET planets endpoint
 @app.get("/planets", dependencies=[Depends(require_api_key)])
 def get_planets(
     db=Depends(get_db),
@@ -127,7 +146,21 @@ def get_planets(
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
 ):
-    """"""
+    """List planets from mart_planet_profile, filtered, sorted by ESI, and paginated.
+
+    Args:
+        db: Database connection (injected).
+        tier (str | None): Filter by habitability_tier, or 'Habitable' for Tier 1/2/3 combined.
+        planet_type (str | None): Filter by planet_composition.
+        star_type (str | None): Filter by star_spectral_type (prefix match, e.g. 'Class G').
+        min_esi (float | None): Minimum ESI score, inclusive.
+        max_esi (float | None): Maximum ESI score, inclusive.
+        limit (int): Max rows to return (1-500).
+        offset (int): Row offset for pagination.
+
+    Returns:
+        JSONResponse: List of matching planet summary rows.
+    """
     filters = []
     params: list = []
 
@@ -167,10 +200,16 @@ def get_planets(
     return decimal_response(rows)
 
 
-# GET habitable planets list endpoint
 @app.get("/planets/habitable/list", dependencies=[Depends(require_api_key)])
 def get_habitable_planets(db=Depends(get_db)):
-    """"""
+    """List every potentially habitable planet (Tier 1/2/3), including its image prompt body.
+
+    Args:
+        db: Database connection (injected).
+
+    Returns:
+        JSONResponse: List of habitable planet rows with image_prompt_body.
+    """
     cursor = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cursor.execute("""
         SELECT
@@ -187,10 +226,17 @@ def get_habitable_planets(db=Depends(get_db)):
     return decimal_response(rows)
 
 
-# GET planets by habitability tier endpoint
 @app.get("/planets/tier/{tier}", dependencies=[Depends(require_api_key)])
 def get_planets_by_tier(tier: str, db=Depends(get_db)):
-    """"""
+    """List planets matching an exact habitability_tier value.
+
+    Args:
+        tier (str): Habitability tier to match exactly (e.g. 'Tier 1').
+        db: Database connection (injected).
+
+    Returns:
+        JSONResponse: List of matching planet summary rows.
+    """
     cursor = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cursor.execute(
         f"""
@@ -206,10 +252,17 @@ def get_planets_by_tier(tier: str, db=Depends(get_db)):
     return decimal_response(rows)
 
 
-# GET search planets endpoint
 @app.get("/planets/search/{query}", dependencies=[Depends(require_api_key)])
 def search_planets(query: str, db=Depends(get_db)):
-    """"""
+    """Search planets by a case-insensitive substring match on planet_name.
+
+    Args:
+        query (str): Substring to search for within planet_name.
+        db: Database connection (injected).
+
+    Returns:
+        JSONResponse: List of matching planet summary rows.
+    """
     cursor = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cursor.execute(
         f"""
@@ -225,10 +278,19 @@ def search_planets(query: str, db=Depends(get_db)):
     return decimal_response(rows)
 
 
-# GET latest pipeline audit endpoint
 @app.get("/audit/latest", dependencies=[Depends(require_api_key)])
 def get_latest_audit(db=Depends(get_db)):
-    """"""
+    """Fetch the most recent pipeline run's audit record.
+
+    Args:
+        db: Database connection (injected).
+
+    Returns:
+        JSONResponse: The latest row from raw.pipeline_audit.
+
+    Raises:
+        HTTPException: 404 if no pipeline runs have been recorded yet.
+    """
     cursor = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cursor.execute("""
         SELECT
@@ -251,10 +313,21 @@ def get_latest_audit(db=Depends(get_db)):
     return decimal_response(row)
 
 
-# GET single planet endpoint
 @app.get("/planets/{planet_name}", dependencies=[Depends(require_api_key)])
 def get_planet(planet_name: str, db=Depends(get_db)):
-    """"""
+    """Fetch full detail for a single planet, including habitability scores,
+    image URL, and AI-generated description.
+
+    Args:
+        planet_name (str): Exact planet name to look up.
+        db: Database connection (injected).
+
+    Returns:
+        JSONResponse: The full planet detail row.
+
+    Raises:
+        HTTPException: 404 if no planet matches planet_name.
+    """
     cursor = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cursor.execute(
         """

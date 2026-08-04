@@ -1,13 +1,12 @@
 -- sql schema for raw exoplanets data from NASA API
 
--- create schemas
 CREATE SCHEMA IF NOT EXISTS raw;
 CREATE SCHEMA IF NOT EXISTS staging;
 CREATE SCHEMA IF NOT EXISTS marts;
 
--- create planet images table
--- image_url holds the ground-level surface view; image_url_orbital holds the
--- full-planet space/orbital portrait view
+-- image_url holds the AI-generated Earth-size-comparison image. image_url_orbital
+-- is an unused legacy column from an earlier dual-image design — kept nullable
+-- for backward compatibility, no longer populated by generate_images.py.
 CREATE TABLE IF NOT EXISTS marts.planet_images (
     planet_name VARCHAR(150) PRIMARY KEY,
     image_url TEXT NOT NULL,
@@ -19,7 +18,6 @@ CREATE TABLE IF NOT EXISTS marts.planet_images (
 
 ALTER TABLE marts.planet_images ADD COLUMN IF NOT EXISTS image_url_orbital TEXT;
 
--- create planet descriptions table
 CREATE TABLE IF NOT EXISTS marts.planet_descriptions (
     planet_name VARCHAR(150) PRIMARY KEY,
     description TEXT NOT NULL,

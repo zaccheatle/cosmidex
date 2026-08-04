@@ -19,6 +19,3 @@ models:
         description: True if radius, mass, orbital distance, stellar luminosity, and stellar temp are all present.
         data_tests:
           - not_null
-
-  - name: stg_hwc
-    description: Cleaned, renamed columns from raw.hwc (Habitable Worlds Catalog).

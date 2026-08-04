@@ -2,6 +2,14 @@ import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import './Tooltip.css'
 
+/**
+ * Hoverable info icon that renders its tooltip text in a portal positioned
+ * next to the icon, flipping/clamping to stay within the viewport.
+ *
+ * @param props
+ * @param props.text - Tooltip content; a string or JSX to render inside the tooltip box.
+ * @returns The tooltip icon and (when hovered) its portal-rendered tooltip box.
+ */
 function Tooltip({ text }) {
   const [visible, setVisible] = useState(false)
   const [position, setPosition] = useState({ top: 0, left: 0 })

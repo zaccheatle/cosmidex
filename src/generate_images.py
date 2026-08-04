@@ -1,8 +1,5 @@
-"""
-Planetary data script to connect to the Google Gemini API to generate planet images
-"""
+"""Planetary data script to connect to the Google Gemini API to generate planet images."""
 
-# import dependencies
 import logging
 import os
 import sys
@@ -22,10 +19,8 @@ from cosmidex_api.database import connection_params
 
 load_dotenv()
 
-# initialize s3 client
 s3_client = boto3.client("s3", region_name=os.getenv("AWS_REGION"))
 
-# initialize gemini client
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 IMAGE_MODEL = "gemini-3.1-flash-image"
 
@@ -40,7 +35,6 @@ IMAGE_CONFIG = types.GenerateContentConfig(
 MAX_PLANETS_PER_RUN = 200
 
 
-# set up logger
 logging.basicConfig(level=logging.INFO)
 
 
@@ -55,10 +49,10 @@ def get_planets(conn: PGConnection) -> list[dict]:
     only generates images for newly-qualifying planets.
 
     Args:
-        conn: (PGConnection): Postgres db connection.
+        conn (PGConnection): Postgres db connection.
 
     Returns:
-        List[Dict]: Returns a list of planet dictionaries in the format list[{planet_name, image_prompt_body}].
+        list[dict]: Planet dictionaries in the format list[{planet_name, image_prompt_body}].
 
     Raises:
         DatabaseError: Error running query against postgres.
@@ -126,7 +120,7 @@ def upload_to_s3(image_bytes: bytes, planet_name: str) -> str | None:
         planet_name (str): Planet's name.
 
     Returns:
-        url where image is stored in s3.
+        str | None: URL where the image is stored in S3, or None on failure.
 
     Raises:
         ClientError: Error connecting to or uploading objects to S3.

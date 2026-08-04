@@ -1,3 +1,5 @@
+"""Dagster Definitions wiring: assets, the weekly ingestion job, and its schedule."""
+
 from dagster import (
     Definitions,
     ScheduleDefinition,

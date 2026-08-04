@@ -2,7 +2,6 @@
 
 {{ config(materialized='materialized_view') }}
 
--- Base CTE
 WITH base AS (
     SELECT *
     FROM {{ ref('mart_planet_profile') }}

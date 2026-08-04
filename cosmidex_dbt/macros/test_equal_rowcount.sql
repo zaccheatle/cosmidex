@@ -1,3 +1,7 @@
+{#
+    Generic test: fails if model and compare_model don't have the same row count.
+    Written in-house to avoid a dbt_utils dependency for this one test.
+#}
 {% test equal_rowcount(model, compare_model) %}
 
     with model_count as (

@@ -11,5 +11,3 @@ sources:
       freshness:
         warn_after: {count: 10, period: day}
         error_after: {count: 30, period: day}
-    - name: hwc
-      description: "Raw habitable exoplanet data loaded from the Habitable Worlds Catalog dataset."

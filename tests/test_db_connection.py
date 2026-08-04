@@ -1,6 +1,5 @@
-""" """
+"""Manual smoke test for the Postgres database connection."""
 
-# Import dependencies
 import logging
 import os
 from typing import Any
@@ -16,11 +15,8 @@ load_dotenv()
 def test_connection() -> Any | None:
     """Test and verify db connection.
 
-    Args:
-        None.
-
     Returns:
-        Conn or None.
+        connection | None: An open psycopg2 connection, or None on failure.
 
     Raises:
         DatabaseError: Psycopg2 database error.

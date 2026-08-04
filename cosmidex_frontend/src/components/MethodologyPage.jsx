@@ -1,5 +1,13 @@
 import './MethodologyPage.css'
 
+/**
+ * Full-screen overlay explaining CosmiDex's data sources, architecture, habitability
+ * scoring methodology, known data limitations, and AI-generated content disclosure.
+ *
+ * @param props
+ * @param props.onClose - Called when the user dismisses the overlay.
+ * @returns The methodology overlay panel.
+ */
 export default function MethodologyPage({ onClose }) {
   return (
     <div className="methodology-overlay">
@@ -9,26 +17,40 @@ export default function MethodologyPage({ onClose }) {
         <h1>Methodology &amp; Sources</h1>
 
         <section>
-          <h2>Data Source</h2>
+          <h2>Author</h2>
+          <h3>Zac Cheatle</h3>
           <p>
-            All planet and star data comes from NASA's{' '}
+            {' '}
+            <a href="https://github.com/zaccheatle/cosmidex" target="_blank" rel="noreferrer">
+              Cosmidex Github Repository
+            </a>{' '} |
+            {' '}
+            <a href="https://www.linkedin.com/in/zaccheatle/" target="_blank" rel="noreferrer">
+              LinkedIn
+            </a>{' '}
+          </p>
+        </section>
+
+        <section>
+          <h2>Architecture</h2>
+          <p>
+            ELT data pipelines orchestrated via Dagster extract data from source → validate → load into Postgres →
+            transform through dbt (Bronze/Silver/Gold layers) → served by a FastAPI backend to a
+            React frontend hosted in AWS.
+          </p>
+        </section>
+
+        <section>
+          <h2>Data Sources</h2>
+          <h3>Exoplanets</h3>
+          <p>
+            Exoplanet data comes from NASA's{' '}
             <a href="https://exoplanetarchive.ipac.caltech.edu/" target="_blank" rel="noreferrer">
               Exoplanet Archive
             </a>{' '}
             (PSCompPars — Planetary Systems Composite Parameters table), pulled via its TAP service.
             As of the last refresh, the archive lists 6,324 confirmed exoplanets; CosmiDex currently
             displays the 75 that fall into Tier 1, 2, or 3 of our habitability classification below.
-          </p>
-        </section>
-
-        <section>
-          <h2>Pipeline</h2>
-          <p>
-            Data is orchestrated with Dagster: extract from NASA → validate → load into Postgres →
-            transform through dbt (Bronze/Silver/Gold layers) → served by a FastAPI backend to this
-            React frontend. The pipeline re-checks the NASA archive on a schedule and only
-            regenerates images/descriptions for planets that are new or newly qualify for a tier —
-            existing planets aren't reprocessed.
           </p>
         </section>
 

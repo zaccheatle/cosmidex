@@ -1,9 +1,7 @@
-"""
-Planetary data script to connect to the Google Gemini API and generate
+"""Planetary data script to connect to the Google Gemini API and generate
 experiential planet descriptions.
 """
 
-# import dependencies
 import logging
 import os
 import sys
@@ -22,7 +20,6 @@ from cosmidex_api.database import connection_params
 
 load_dotenv()
 
-# initialize gemini client
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 TEXT_MODEL = "gemini-3.5-flash"
 
@@ -59,10 +56,17 @@ OPENING_STYLES = [
 
 def opening_style_for(planet_name: str) -> str:
     """Deterministically pick an opening style so the same planet always gets
-    the same style on reruns, but different planets get variety."""
+    the same style on reruns, but different planets get variety.
+
+    Args:
+        planet_name (str): Planet's name, used as the hash key.
+
+    Returns:
+        str: One of the OPENING_STYLES instructions.
+    """
     return OPENING_STYLES[zlib.crc32(planet_name.encode()) % len(OPENING_STYLES)]
 
-# set up logger
+
 logging.basicConfig(level=logging.INFO)
 
 
@@ -78,7 +82,7 @@ def get_planets(conn: PGConnection) -> list[dict]:
         conn (PGConnection): Postgres db connection.
 
     Returns:
-        List[Dict]: Planet dictionaries with the fields needed to build a description prompt.
+        list[dict]: Planet dictionaries with the fields needed to build a description prompt.
     """
 
     try:

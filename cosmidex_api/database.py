@@ -1,8 +1,5 @@
-"""
-Planetary data database connection for API layer
-"""
+"""Planetary data database connection for API layer."""
 
-# Import dependencies
 import logging
 import os
 from typing import Any
@@ -28,9 +25,6 @@ connection_params = {
 def test_connection() -> bool:
     """Test and validate db connection.
 
-    Args:
-        None.
-
     Returns:
         bool: true or false if connection is established.
 
@@ -48,13 +42,10 @@ def test_connection() -> bool:
 
 
 def get_db() -> Any | None:
-    """Create a db connection.
+    """Create a db connection for use as a FastAPI dependency.
 
-    Args:
-        None.
-
-    Returns:
-        None.
+    Yields:
+        connection: An open psycopg2 database connection.
 
     Raises:
         DatabaseError: Psycopg2 database connection error.

@@ -8,7 +8,8 @@ import './App.css'
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 const API_KEY = import.meta.env.VITE_API_KEY
 
-const ENTITY_OPTIONS = ['Exoplanets', 'Constellations', 'Our Solar System']
+// Constellations and Our Solar System will be added here once those datasets exist.
+const ENTITY_OPTIONS = ['Exoplanets']
 
 const TIER_OPTIONS = ['All', 'Tier 1', 'Tier 2', 'Tier 3']
 
@@ -25,16 +26,37 @@ const HZ_LABELS = {
   'outside_hz': 'Outside HZ',
 }
 
+/**
+ * Compute a planet's surface gravity from its mass and radius, scaled to Earth's 9.81 m/s².
+ *
+ * @param massEarth - Planet mass in Earth masses.
+ * @param radiusEarth - Planet radius in Earth radii.
+ * @returns Surface gravity in m/s², or null if either input is missing/zero.
+ */
 function planetGravityMs2(massEarth, radiusEarth) {
   if (massEarth == null || radiusEarth == null || radiusEarth === 0) return null
   return (massEarth / (radiusEarth ** 2)) * 9.81
 }
 
+/**
+ * Compute a planet's escape velocity from its mass and radius, scaled to Earth's 11.2 km/s.
+ *
+ * @param massEarth - Planet mass in Earth masses.
+ * @param radiusEarth - Planet radius in Earth radii.
+ * @returns Escape velocity in km/s, or null if either input is missing/non-positive.
+ */
 function planetEscapeVelocityKms(massEarth, radiusEarth) {
   if (massEarth == null || radiusEarth == null || radiusEarth <= 0) return null
   return Math.sqrt(massEarth / radiusEarth) * 11.2
 }
 
+/**
+ * Fetch JSON from the CosmiDex API with the required X-API-Key header.
+ *
+ * @param path - API path (including query string), relative to API_BASE_URL.
+ * @returns A promise resolving to the parsed JSON response body.
+ * @throws {Error} If the response status is not ok.
+ */
 function apiFetch(path) {
   return fetch(`${API_BASE_URL}${path}`, {
     headers: { 'X-API-Key': API_KEY },
@@ -46,6 +68,14 @@ function apiFetch(path) {
   })
 }
 
+/**
+ * Root application component: fetches the habitable-planet list and the
+ * currently-selected planet's detail, and renders the entity/tier filters,
+ * planet viewer (comparison image + stats panel), navigation, chat shell,
+ * and methodology overlay.
+ *
+ * @returns The CosmiDex application shell.
+ */
 function App() {
   const [planets, setPlanets] = useState([])
   const [listLoading, setListLoading] = useState(true)
@@ -125,7 +155,7 @@ function App() {
 
       <div className="top-bar">
         <div className="top-left">
-          <h1>🌌 CosmiDex: A Codex for the Cosmos</h1>
+          <h1>🌌 Cosmídex: A Codex for the Cosmos</h1>
           <button className="methodology-link" onClick={() => setShowMethodology(true)}>
             Methodology &amp; Sources
           </button>

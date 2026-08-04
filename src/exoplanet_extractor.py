@@ -1,8 +1,5 @@
-"""
-Module for scraping the NASA exoplanet archive's PScomppars dataset.
-"""
+"""Module for scraping the NASA exoplanet archive's PScomppars dataset."""
 
-# Import dependencies
 import logging
 from io import StringIO
 from typing import Literal
@@ -12,7 +9,6 @@ import requests
 from astropy.io.votable import parse
 
 
-# Function to buld TAP query
 def build_query(
     base_url: str | None,
     response_format: Literal["csv", "json", "tsv", "VOTable"],
@@ -20,16 +16,16 @@ def build_query(
     columns: list[str] = ["*"],
     custom_query: str | None = None,
 ) -> pd.DataFrame | None:
-    """
-    Function to build dynamic queries to programmatically retrieve data from NASA's Exoplanet Archive TAP service.
+    """Build dynamic queries to programmatically retrieve data from NASA's Exoplanet Archive TAP service.
+
     Supports both simple table queries and custom ADQL queries for metadata or complex filtering.
 
     Args:
-        base_url: TAP service endpoint URL
-        response_format: format (json, csv, tsv, or votable)
-        table_name: Table to query (e.g., 'ps' for Planetary Systems). Optional if custom_query is provided.
-        columns: List of column names to select. Default is ["*"] for all columns.
-        custom_query: Full ADQL query string. If provided, overrides table_name and columns.
+        base_url (str | None): TAP service endpoint URL.
+        response_format (Literal["csv", "json", "tsv", "VOTable"]): Response format.
+        table_name (str | None): Table to query (e.g., 'ps' for Planetary Systems). Optional if custom_query is provided.
+        columns (list[str]): List of column names to select. Default is ["*"] for all columns.
+        custom_query (str | None): Full ADQL query string. If provided, overrides table_name and columns.
 
     Returns:
         Parsed data in format-specific type:

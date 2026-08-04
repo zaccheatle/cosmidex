@@ -1,3 +1,7 @@
+"""Dagster asset definitions for the NASA exoplanet ingestion pipeline: extract,
+validate, hash-check, load to Bronze, and audit-log.
+"""
+
 import hashlib
 import logging
 import os
@@ -24,6 +28,11 @@ PIPELINE_NAME = "nasa_exoplanets"
 
 
 def _get_engine() -> sqlalchemy.engine.Engine:
+    """Build a SQLAlchemy engine for the Postgres instance from env vars.
+
+    Returns:
+        sqlalchemy.engine.Engine: Engine connected to the configured Postgres database.
+    """
     conn_string = (
         f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}"
         f"@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
@@ -33,7 +42,14 @@ def _get_engine() -> sqlalchemy.engine.Engine:
 
 @asset
 def raw_nasa_data() -> pd.DataFrame:
-    """Extract raw exoplanet data from NASA TAP service."""
+    """Extract raw exoplanet data from NASA TAP service.
+
+    Returns:
+        pd.DataFrame: Raw PSCompPars exoplanet records.
+
+    Raises:
+        Exception: If the NASA TAP query returns no data.
+    """
 
     nasa_url = os.environ.get("NASA_URL")
     print(f"Debug nasa_url: {nasa_url}")
@@ -52,8 +68,7 @@ def raw_nasa_data() -> pd.DataFrame:
 
 @asset
 def validated_nasa_dict(raw_nasa_data: pd.DataFrame) -> pd.DataFrame:
-    """
-    Validate raw NASA data against ExoplanetRecord dataclass schema.
+    """Validate raw NASA data against ExoplanetRecord dataclass schema.
 
     Args:
         raw_nasa_data (pd.DataFrame): Raw exoplanet dataframe.
@@ -78,14 +93,13 @@ def validated_nasa_dict(raw_nasa_data: pd.DataFrame) -> pd.DataFrame:
 
 @asset
 def hash_dataframe(validated_nasa_dict: pd.DataFrame) -> str:
-    """
-    Hash a DataFrame to detect changes between runs.
+    """Hash a DataFrame to detect changes between runs.
 
     Args:
         validated_nasa_dict (pd.DataFrame): Dataframe with rows to hash.
 
     Returns:
-        row hash (str): Hash for row of dataframe.
+        str: MD5 hash of the dataframe's contents.
     """
 
     df_sorted = validated_nasa_dict.sort_values(by="pl_name").reset_index(drop=True)
@@ -95,8 +109,7 @@ def hash_dataframe(validated_nasa_dict: pd.DataFrame) -> str:
 
 @asset
 def check_file_hash(validated_nasa_dict: pd.DataFrame, hash_dataframe: str) -> dict:
-    """
-    Check if NASA data has changed since the last pipeline run and detect new planets.
+    """Check if NASA data has changed since the last pipeline run and detect new planets.
 
     Args:
         validated_nasa_dict (pd.DataFrame): Current validated exoplanet dataframe.
@@ -157,8 +170,8 @@ def check_file_hash(validated_nasa_dict: pd.DataFrame, hash_dataframe: str) -> d
 
 @asset
 def load_bronze(validated_nasa_dict: pd.DataFrame, check_file_hash: dict) -> dict:
-    """
-    Full-reload validated NASA data into raw.exoplanets and record the run in raw.pipeline_state.
+    """Full-reload validated NASA data into raw.exoplanets and record the run in raw.pipeline_state.
+
     Skips the reload entirely if check_file_hash reported no change since the last run.
 
     Args:
@@ -213,11 +226,13 @@ def load_bronze(validated_nasa_dict: pd.DataFrame, check_file_hash: dict) -> dic
 
 @asset
 def audit_log(load_bronze: dict) -> None:
-    """
-    Write run metadata for this pipeline execution to raw.pipeline_audit.
+    """Write run metadata for this pipeline execution to raw.pipeline_audit.
 
     Args:
         load_bronze (dict): Output of load_bronze (changed/current_hash/new_planets/planet_count/loaded).
+
+    Returns:
+        None.
     """
 
     engine = _get_engine()

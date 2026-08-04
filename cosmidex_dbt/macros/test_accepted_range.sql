@@ -1,3 +1,8 @@
+{#
+    Generic test: fails if any non-null value in column_name falls outside
+    [min_value, max_value]. Either bound may be omitted for a one-sided check.
+    Written in-house to avoid a dbt_utils dependency for this one test.
+#}
 {% test accepted_range(model, column_name, min_value=none, max_value=none) %}
 
     select *

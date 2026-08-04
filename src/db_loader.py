@@ -1,8 +1,5 @@
-"""
-Docstring for planet_loader
-"""
+"""Generic Postgres loader used by the legacy pipeline scripts in src/."""
 
-# Import dependencies
 import logging
 import os
 
@@ -11,17 +8,13 @@ import sqlalchemy
 import sqlalchemy.exc
 from dotenv import load_dotenv
 
-# set log level
 logging.basicConfig(level=logging.DEBUG)
 
-# set env variables
 load_dotenv()
 
 
-# Upsert into db
 def load_db(data: pd.DataFrame, schema_name: str, table_name: str) -> None:
-    """
-    Dynamically Load DataFrame to Postgres, auto-creating table from raw DataFrame schema
+    """Dynamically load a DataFrame to Postgres, auto-creating the table from its schema.
 
     Args:
         data (pd.Dataframe): Dataframe of data to be inserted into db.

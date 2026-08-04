@@ -1,7 +1,12 @@
 import { useState } from 'react'
 import './ChatShell.css'
 
-// Placeholder chat UI — not wired to a backend yet. Prep for the M7 MCP/RAG chat layer.
+/**
+ * Placeholder chat UI (the "Cosmo" assistant) — not wired to a backend yet.
+ * Prep for the M7 MCP/RAG chat layer; input and send are disabled until then.
+ *
+ * @returns The floating chat toggle button and its expandable panel.
+ */
 function ChatShell() {
   const [open, setOpen] = useState(false)
   const [draft, setDraft] = useState('')

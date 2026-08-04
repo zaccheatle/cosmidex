@@ -67,9 +67,10 @@ models:
             compare_model: ref('stg_exoplanets')
 
   - name: mart_planet_image_prompt
-    description: DALL-E 3 image generation prompts, one row per exoplanet.
+    description: Google Gemini image generation prompts, one row per exoplanet.
     columns:
       - name: planet_name
+        description: Unique identifier for the planet.
         data_tests:
           - unique
           - not_null

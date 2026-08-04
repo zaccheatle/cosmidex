@@ -65,9 +65,8 @@ cosmidex/
 │       └── components/
 │           └── Tooltip.jsx
 ├── src/                         ← legacy pipeline scripts
-│   ├── exoplanet_extractor.py   ← NASA TAP query builder
-│   ├── db_loader.py             ← SQLAlchemy Postgres loader
-│   ├── pipeline.py              ← original run_pipeline()
+│   ├── exoplanet_extractor.py   ← NASA TAP query builder (used by cosmidex_pipeline)
+│   ├── db_loader.py             ← SQLAlchemy Postgres loader (used by cosmidex_pipeline)
 │   ├── generate_images.py       ← Gemini image generation
 │   └── generate_descriptions.py ← Gemini descriptions
 ├── sql/                         ← raw SQL migrations
@@ -350,7 +349,6 @@ GEMINI_API_KEY=
 AWS_REGION=us-east-1
 AWS_S3_BUCKET=planetary-data-images
 NASA_URL=https://exoplanetarchive.ipac.caltech.edu/TAP/sync
-HWC_URL=
 ```
 
 AWS credentials from `~/.aws/credentials` [default] profile.

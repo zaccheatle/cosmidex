@@ -1,8 +1,3 @@
-// Log-scale diagram placing an exoplanet's orbital distance against our own
-// solar system's planets, so its distance from its star is grounded in
-// something familiar. All reference distances (Mercury through Neptune) are
-// real, fixed AU values — only the exoplanet marker and habitable-zone band
-// come from actual mart data.
 const SCALE_MIN_AU = 0.01
 const SCALE_MAX_AU = 35
 
@@ -22,6 +17,13 @@ const HEIGHT = 220
 const MARGIN_X = 70
 const BASELINE_Y = 130
 
+/**
+ * Convert an orbital distance in AU to an SVG x-coordinate on the log scale,
+ * clamped to [SCALE_MIN_AU, SCALE_MAX_AU].
+ *
+ * @param au - Orbital distance in AU.
+ * @returns The x-coordinate in SVG viewBox units.
+ */
 function auToX(au) {
   const clamped = Math.min(Math.max(au, SCALE_MIN_AU), SCALE_MAX_AU)
   const t =
@@ -30,6 +32,21 @@ function auToX(au) {
   return MARGIN_X + t * (WIDTH - 2 * MARGIN_X)
 }
 
+/**
+ * Log-scale diagram placing an exoplanet's orbital distance against our own
+ * solar system's planets, so its distance from its star is grounded in
+ * something familiar. All reference distances (Mercury through Neptune) are
+ * real, fixed AU values — only the exoplanet marker and habitable-zone band
+ * come from actual mart data.
+ *
+ * @param props
+ * @param props.planetName - The exoplanet's name, shown as its marker label.
+ * @param props.hostStarName - The host star's name, shown at the scale's origin.
+ * @param props.orbitalAu - The exoplanet's orbital semi-major axis in AU.
+ * @param props.hzInnerAu - Inner edge of the host star's conservative habitable zone, in AU.
+ * @param props.hzOuterAu - Outer edge of the host star's conservative habitable zone, in AU.
+ * @returns The SVG orbit-scale diagram, or null if orbitalAu is unknown.
+ */
 export default function OrbitScale({ planetName, hostStarName, orbitalAu, hzInnerAu, hzOuterAu }) {
   if (orbitalAu == null) return null
 
