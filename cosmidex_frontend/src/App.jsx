@@ -3,6 +3,7 @@ import Tooltip from './components/Tooltip'
 import ChatShell from './components/ChatShell'
 import OrbitScale from './components/OrbitScale'
 import MethodologyPage from './components/MethodologyPage'
+import LandingPage from './components/LandingPage'
 import './App.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
@@ -90,6 +91,7 @@ function App() {
   const [detailError, setDetailError] = useState(null)
 
   const [showMethodology, setShowMethodology] = useState(false)
+  const [showLanding, setShowLanding] = useState(true)
 
   // Fetch every potentially habitable planet (Tier 1/2/3) once on mount
   useEffect(() => {
@@ -150,15 +152,32 @@ function App() {
     }
   }, [currentSummary])
 
+  if (showLanding) {
+    return (
+      <>
+        <LandingPage
+          onEnter={() => setShowLanding(false)}
+          onShowMethodology={() => setShowMethodology(true)}
+        />
+        {showMethodology && <MethodologyPage onClose={() => setShowMethodology(false)} />}
+      </>
+    )
+  }
+
   return (
     <div className="app">
 
       <div className="top-bar">
         <div className="top-left">
-          <h1>🌌 Cosmídex: A Codex for the Cosmos</h1>
-          <button className="methodology-link" onClick={() => setShowMethodology(true)}>
-            Methodology &amp; Sources
-          </button>
+          <h1>🌌 Cosmidex: A Codex for the Cosmos</h1>
+          <div className="header-link-group">
+            <button className="methodology-link" onClick={() => setShowLanding(true)}>
+              Landing Page
+            </button>
+            <button className="methodology-link" onClick={() => setShowMethodology(true)}>
+              Methodology &amp; Sources
+            </button>
+          </div>
         </div>
         <div className="top-right">
           <div className="filter-section">
@@ -360,6 +379,7 @@ function App() {
                       <OrbitScale
                         planetName={currentPlanet.planet_name}
                         hostStarName={currentPlanet.host_star_name}
+                        hostStarSpectralType={currentPlanet.star_spectral_type}
                         orbitalAu={currentPlanet.orbital_semi_major_axis_au}
                         hzInnerAu={currentPlanet.hz_inner_conservative_au}
                         hzOuterAu={currentPlanet.hz_outer_conservative_au}
