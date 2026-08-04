@@ -40,7 +40,7 @@ export default function LandingPage({ onEnter, onShowMethodology }) {
             Explore the Codex→
           </button>
           <button className="landing-methodology-btn" onClick={onShowMethodology}>
-            Methodology &amp; Sources
+            About
           </button>
         </div>
       </div>
