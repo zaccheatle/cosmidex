@@ -6,13 +6,18 @@ CREATE SCHEMA IF NOT EXISTS staging;
 CREATE SCHEMA IF NOT EXISTS marts;
 
 -- create planet images table
+-- image_url holds the ground-level surface view; image_url_orbital holds the
+-- full-planet space/orbital portrait view
 CREATE TABLE IF NOT EXISTS marts.planet_images (
     planet_name VARCHAR(150) PRIMARY KEY,
     image_url TEXT NOT NULL,
+    image_url_orbital TEXT,
     image_prompt TEXT,
     generation_model VARCHAR(100),
     generated_at TIMESTAMP DEFAULT now()
 );
+
+ALTER TABLE marts.planet_images ADD COLUMN IF NOT EXISTS image_url_orbital TEXT;
 
 -- create planet descriptions table
 CREATE TABLE IF NOT EXISTS marts.planet_descriptions (

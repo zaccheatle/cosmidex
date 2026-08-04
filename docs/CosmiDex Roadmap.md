@@ -19,7 +19,7 @@ stored in AWS S3.
 *Enrich existing exoplanet cards with richer context and generated content.*
 
 ### 1.1 Planet Descriptions
-- [ ] Build `generate_descriptions.py` using GPT-4o
+- [ ] Build `generate_descriptions.py` using Gemini
 - [ ] Generate 3-sentence experiential descriptions for all notable planets
 - [ ] Store in `marts.planet_descriptions` table
 - [ ] Serve via API and display at the bottom of each planet card

@@ -1,6 +1,6 @@
 """
-Planetary data script to connect to the OpenAI API and generate experiential
-planet descriptions with GPT-4o.
+Planetary data script to connect to the Google Gemini API and generate
+experiential planet descriptions.
 """
 
 # import dependencies
@@ -8,11 +8,13 @@ import logging
 import os
 import sys
 import time
+import zlib
 
 import psycopg2
 import psycopg2.extras
 from dotenv import load_dotenv
-from openai import OpenAI
+from google import genai
+from google.genai import types
 from psycopg2.extensions import connection as PGConnection
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
@@ -20,31 +22,57 @@ from cosmidex_api.database import connection_params
 
 load_dotenv()
 
-# initialize openai client
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# initialize gemini client
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+TEXT_MODEL = "gemini-3.5-flash"
 
-# top N planets (by ESI) to generate descriptions for
-TOP_N_PLANETS = 25
+# safety cap on planets generated in a single run
+MAX_PLANETS_PER_RUN = 200
 
 SYSTEM_PROMPT = """
-You are a science communicator for CosmiDex, an exoplanet explorer app, writing
-in the informal, vivid, enthusiastic voice of someone like Neil deGrasse Tyson
-explaining a cool space fact to a casual space enthusiast — approachable and
-fun, not dry or textbook-y, but still scientifically grounded. Write a
-second-person description of what it might feel like to stand on or near the
-given exoplanet, in AT MOST 2 short sentences — punchy, not exhaustive. Pick
-only the one or two most striking sensory details (temperature, gravity, star
-light, atmosphere/composition) rather than covering everything. Do not invent
-details that contradict the data (e.g. don't describe breathable air on a gas
-giant). Write only the description, no preamble or planet name repetition.
+You are a science writer for CosmiDex, an exoplanet explorer app. Write a
+vivid, second-person description (AT MOST 2 sentences) of standing on or near
+the given exoplanet. Ground it in the actual data — temperature, gravity,
+star light, atmosphere/composition — and pick one or two concrete, specific
+details rather than listing everything.
+
+Write like a knowledgeable person texting a friend a cool fact, not like ad
+copy. Strictly avoid: opening with "Imagine...", "Picture...", "Whoa...", or
+"Standing on...", exclamation points, and generic space-metaphor filler
+("cosmic dance", "otherworldly wonder", "tropical paradise", "breathtaking",
+"awe-inspiring"). Do not invent details that contradict the data (e.g. don't
+describe breathable air on a gas giant). Output only the description, no
+preamble.
 """
+
+# Rotated per-planet so descriptions don't all default to the same opening
+# pattern (each API call is stateless, so the model has no memory of what
+# it wrote for other planets to vary against).
+OPENING_STYLES = [
+    "Open with a sensory detail (light, temperature, or texture) — not a scene-setting phrase.",
+    "Open by comparing something on this planet directly to Earth.",
+    "Open with what the sky or the host star looks like from the surface.",
+    "Open with how your body would feel (weight, breathing, temperature) in the first few seconds.",
+    "Open with the ground or terrain underfoot.",
+]
+
+
+def opening_style_for(planet_name: str) -> str:
+    """Deterministically pick an opening style so the same planet always gets
+    the same style on reruns, but different planets get variety."""
+    return OPENING_STYLES[zlib.crc32(planet_name.encode()) % len(OPENING_STYLES)]
 
 # set up logger
 logging.basicConfig(level=logging.INFO)
 
 
 def get_planets(conn: PGConnection) -> list[dict]:
-    """Retrieve descriptive stats for the top N planets by ESI score.
+    """Retrieve descriptive stats for potentially habitable planets (Tier 1/2/3)
+    that don't have a description yet.
+
+    Only planets missing a row in marts.planet_descriptions are returned, so
+    re-running this after a rescrape only generates descriptions for newly-qualifying
+    planets.
 
     Args:
         conn (PGConnection): Postgres db connection.
@@ -71,11 +99,16 @@ def get_planets(conn: PGConnection) -> list[dict]:
                 orbital_distance_description,
                 equilibrium_temp_celsius,
                 esi_score
-            FROM marts.mart_planet_profile
+            FROM marts.mart_planet_profile AS pp
+            WHERE pp.habitability_tier IN ('Tier 1', 'Tier 2', 'Tier 3')
+                AND NOT EXISTS (
+                    SELECT 1 FROM marts.planet_descriptions AS pd
+                    WHERE pd.planet_name = pp.planet_name
+                )
             ORDER BY esi_score DESC NULLS LAST
             LIMIT %s
         """,
-            (TOP_N_PLANETS,),
+            (MAX_PLANETS_PER_RUN,),
         )
         rows = cursor.fetchall()
         cursor.close()
@@ -87,14 +120,18 @@ def get_planets(conn: PGConnection) -> list[dict]:
 
 
 def build_prompt(planet: dict) -> str:
-    """Build the user prompt describing a planet's stats for GPT-4o.
+    """Build the user prompt describing a planet's stats for Gemini.
 
     Args:
         planet (dict): Planet stats returned by get_planets().
 
     Returns:
-        str: The prompt to send to GPT-4o.
+        str: The prompt to send to Gemini.
     """
+
+    esi_text = (
+        f"{planet['esi_score']:.3f}" if planet["esi_score"] is not None else "unknown"
+    )
 
     return (
         f"Planet: {planet['planet_name']}, orbiting {planet['host_star_name']}.\n"
@@ -106,12 +143,13 @@ def build_prompt(planet: dict) -> str:
         f"Orbital distance: {planet['orbital_distance_description']}\n"
         f"Host star: {planet['star_spectral_type']}, {planet['star_temp_description']}, {planet['star_life_stage']}\n"
         f"Habitability classification: {planet['habitability_tier']}\n"
-        f"Earth Similarity Index: {planet['esi_score']:.3f}"
+        f"Earth Similarity Index: {esi_text}\n"
+        f"Opening instruction: {opening_style_for(planet['planet_name'])}"
     )
 
 
 def generate_description(prompt: str) -> str | None:
-    """Generate an experiential planet description using GPT-4o.
+    """Generate an experiential planet description using Gemini.
 
     Args:
         prompt (str): Prompt describing the planet's stats.
@@ -120,16 +158,17 @@ def generate_description(prompt: str) -> str | None:
         str | None: Generated description text or None on failure.
     """
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": prompt},
-            ],
-            max_tokens=100,
-            temperature=0.8,
+        response = client.models.generate_content(
+            model=TEXT_MODEL,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                system_instruction=SYSTEM_PROMPT,
+                max_output_tokens=200,
+                temperature=0.8,
+                thinking_config=types.ThinkingConfig(thinking_budget=0),
+            ),
         )
-        return response.choices[0].message.content
+        return response.text
     except Exception as e:
         logging.error(f"Description generation error: {e}")
         return None
@@ -195,7 +234,7 @@ def main():
         time.sleep(1)
 
         if description is not None:
-            save_description(conn, planet_name, description, "gpt-4o")
+            save_description(conn, planet_name, description, TEXT_MODEL)
             saved_count += 1
             logging.info(f"Description saved for {planet_name}.")
         else:

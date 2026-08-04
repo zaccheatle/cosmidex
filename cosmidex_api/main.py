@@ -114,21 +114,26 @@ def home():
 @app.get("/planets", dependencies=[Depends(require_api_key)])
 def get_planets(
     db=Depends(get_db),
-    tier: str | None = Query(None, description="Filter by habitability_tier"),
+    tier: str | None = Query(
+        None,
+        description="Filter by habitability_tier, or 'Habitable' for Tier 1/2/3 combined",
+    ),
     planet_type: str | None = Query(None, description="Filter by planet_composition"),
     star_type: str | None = Query(
         None, description="Filter by star_spectral_type (prefix match, e.g. 'Class G')"
     ),
     min_esi: float | None = Query(None, ge=0, le=1),
     max_esi: float | None = Query(None, ge=0, le=1),
-    limit: int = Query(25, ge=1, le=500),
+    limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
 ):
     """"""
     filters = []
     params: list = []
 
-    if tier is not None:
+    if tier == "Habitable":
+        filters.append("habitability_tier != 'Non-Habitable'")
+    elif tier is not None:
         filters.append("habitability_tier = %s")
         params.append(tier)
     if planet_type is not None:
@@ -170,7 +175,7 @@ def get_habitable_planets(db=Depends(get_db)):
     cursor.execute("""
         SELECT
             pp.*,
-            ip.image_prompt
+            ip.image_prompt_body
         FROM marts.mart_planet_profile AS pp
         LEFT JOIN marts.mart_planet_image_prompt AS ip
             ON pp.planet_name = ip.planet_name

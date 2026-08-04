@@ -40,3 +40,8 @@
   line-height: 1.5;
   pointer-events: none;
 }
+
+.tooltip-highlight {
+  color: #4a9eff;
+  font-weight: 600;
+}

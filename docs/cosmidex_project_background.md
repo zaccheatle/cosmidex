@@ -8,7 +8,7 @@
 
 **CosmiDex: A Codex for the Cosmos** — a Pokédex-style cosmic explorer app that displays exoplanets as interactive cards with AI-generated artwork, Earth-relative stats, habitability scores, and experiential descriptions. Built as a full-stack data engineering portfolio project covering ingestion, transformation, API, frontend, orchestration, and AI layers.
 
-Currently focused on NASA's confirmed exoplanet catalog (PSCompPars dataset), displaying the **top 25 planets** ordered by `esi_score DESC`. (Note: an earlier `is_notable` curation flag for 13 manually-flagged famous planets was intentionally removed — ordering is ESI-only now.)
+Currently focused on NASA's confirmed exoplanet catalog (PSCompPars dataset), displaying **all potentially habitable planets** (habitability_tier IN Tier 1/2/3 — currently 75 of 6,324 confirmed exoplanets) ordered by `esi_score DESC`. (Note: an earlier `is_notable` curation flag for 13 manually-flagged famous planets was intentionally removed. The display scope changed from a fixed top-25-by-ESI to this dynamic tier-based set on 2026-07-30, after noticing ESI-only ordering could surface Non-Habitable planets that scored high on physical similarity despite sitting outside the habitable zone. The set now grows automatically as new confirmed planets qualify — no code change needed.)
 
 ---
 
@@ -24,8 +24,8 @@ Currently focused on NASA's confirmed exoplanet catalog (PSCompPars dataset), di
 | API | FastAPI |
 | Frontend | React + Vite |
 | Image storage | AWS S3 |
-| Image generation | OpenAI gpt-image-1-mini |
-| Description generation | OpenAI GPT-4o |
+| Image generation | Google Gemini (gemini-3.1-flash-image) |
+| Description generation | Google Gemini (gemini-3.5-flash) |
 | Infrastructure | Terraform (AWS) |
 | CI/CD | GitHub Actions |
 | AI chat layer | Claude API + MCP tools + pgvector RAG (planned) |
@@ -68,8 +68,8 @@ cosmidex/
 │   ├── exoplanet_extractor.py   ← NASA TAP query builder
 │   ├── db_loader.py             ← SQLAlchemy Postgres loader
 │   ├── pipeline.py              ← original run_pipeline()
-│   ├── generate_images.py       ← gpt-image-1-mini image generation
-│   └── generate_descriptions.py ← GPT-4o descriptions (in progress)
+│   ├── generate_images.py       ← Gemini image generation
+│   └── generate_descriptions.py ← Gemini descriptions
 ├── sql/                         ← raw SQL migrations
 │   └── pipeline_state.sql       ← pipeline state tracking table
 ├── terraform/                   ← AWS infrastructure (planned)
@@ -97,11 +97,11 @@ cosmidex/
 ### Marts layer (Gold) — dbt materialized views
 - `marts.mart_habitability_scores` — ESI score, HZD score, habitability tier, habitable zone membership
 - `marts.mart_planet_profile` — full display stats, descriptions, Earth comparisons, travel times
-- `marts.mart_planet_image_prompt` — AI image prompts for gpt-image-1-mini
+- `marts.mart_planet_image_prompt` — AI image prompts for Gemini
 
 ### Application tables (not dbt managed)
 - `marts.planet_images` — S3 image URLs per planet
-- `marts.planet_descriptions` — GPT-4o experiential descriptions (in progress)
+- `marts.planet_descriptions` — Gemini experiential descriptions
 
 ---
 
@@ -180,7 +180,7 @@ Full display model combining staging + habitability scores + derived description
 - Orbital distance, year length, season, weather estimations
 
 ### mart_planet_image_prompt.sql (Gold — materialized view)
-- `image_prompt` — concatenated gpt-image-1-mini prompt string
+- `image_prompt_body` — concatenated Gemini prompt string
 
 ---
 
@@ -295,7 +295,7 @@ No ECS — Dagster Cloud Serverless handles orchestration, FastAPI runs on a sin
 
 ### M4 — Frontend
 1. Audit and update frontend for API changes
-2. Add filter controls for top 25
+2. Add filter controls for the Tier 1/2/3 set
 3. Add sort controls
 4. Add chat UI shell component (prep for M7)
 5. Add loading states and error handling
@@ -331,7 +331,7 @@ No ECS — Dagster Cloud Serverless handles orchestration, FastAPI runs on a sin
 | Change detection | File-level hash | Skip pipeline entirely if no changes, log new planets if changed |
 | Dataclass scope | PK validation only | All NASA columns pass through to Bronze unchanged |
 | Generic validator | parse_row/validate_records accept any dataclass | Reusable for HWC, solar system bodies, future datasets |
-| Display scope | Top 25 ESI-ranked planets | is_notable curation flag was removed; ordering is ESI-only. Reduced from 50 to 25 on 2026-07-30 |
+| Display scope | All Tier 1/2/3 planets, ESI-ranked | is_notable curation flag was removed; ordering is ESI-only within the tier filter. Changed from a fixed top-N-by-ESI to a dynamic tier-based set on 2026-07-30 so Non-Habitable planets never appear and new qualifiers are picked up automatically |
 | Orchestration | Dagster Cloud Serverless | Avoids ECS complexity, free tier covers solo project |
 | Streaming vs batch | Batch | NASA data updates weekly, streaming adds no value |
 | RAG vs MCP | Hybrid both | MCP for structured SQL queries, RAG for unstructured research docs |
@@ -346,7 +346,7 @@ POSTGRES_PORT=
 POSTGRES_DB=planetary_data
 POSTGRES_USER=
 POSTGRES_PASSWORD=
-OPENAI_API_KEY=
+GEMINI_API_KEY=
 AWS_REGION=us-east-1
 AWS_S3_BUCKET=planetary-data-images
 NASA_URL=https://exoplanetarchive.ipac.caltech.edu/TAP/sync
@@ -378,7 +378,7 @@ AWS credentials from `~/.aws/credentials` [default] profile.
 2. **Complete `load_bronze` asset** — DROP CASCADE + full reload + store new hash
 3. **Complete `audit_log` asset** — write run metadata to `raw.pipeline_audit`
 4. **Add weekly Dagster schedule** — `@schedule` decorator, Monday 6am
-5. **Complete `generate_descriptions.py`** — GPT-4o experiential planet descriptions following same pattern as `generate_images.py`
+5. **Complete `generate_descriptions.py`** — Gemini experiential planet descriptions following same pattern as `generate_images.py`
 
 ---
 

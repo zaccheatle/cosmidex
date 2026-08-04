@@ -1,9 +1,8 @@
 """
-Planetary data script to connect to openai api to generate planet images
+Planetary data script to connect to the Google Gemini API to generate planet images
 """
 
 # import dependencies
-import base64
 import logging
 import os
 import sys
@@ -14,7 +13,8 @@ import psycopg2
 import psycopg2.extras
 from botocore.exceptions import ClientError
 from dotenv import load_dotenv
-from openai import OpenAI
+from google import genai
+from google.genai import types
 from psycopg2.extensions import connection as PGConnection
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
@@ -25,27 +25,40 @@ load_dotenv()
 # initialize s3 client
 s3_client = boto3.client("s3", region_name=os.getenv("AWS_REGION"))
 
-# initialize openai client
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# initialize gemini client
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+IMAGE_MODEL = "gemini-3.1-flash-image"
 
-# top N planets (by ESI) to generate images for
-TOP_N_PLANETS = 25
+# 4:3 matches the app's comparison-image panel much more closely than the
+# model's 16:9 default, which left large empty letterbox bands above/below
+# the image in that panel.
+IMAGE_CONFIG = types.GenerateContentConfig(
+    image_config=types.ImageConfig(aspect_ratio="4:3"),
+)
+
+# safety cap on planets generated in a single run
+MAX_PLANETS_PER_RUN = 200
+
 
 # set up logger
 logging.basicConfig(level=logging.INFO)
 
 
 def get_planets(conn: PGConnection) -> list[dict]:
-    """Retrieve planet name and image prompt for the top N planets by ESI score.
+    """Retrieve planet name and image prompt body for potentially habitable
+    planets (Tier 1/2/3) that don't have images yet.
 
-    Planet image prompts are stored in the marts.mart_planet_image_prompt materialized
-    view; ESI score lives on marts.mart_planet_profile, so the two are joined here.
+    Planet image prompt bodies are stored in the marts.mart_planet_image_prompt
+    materialized view; habitability_tier and ESI score live on
+    marts.mart_planet_profile, so the two are joined here. Only planets missing a
+    row in marts.planet_images are returned, so re-running this after a rescrape
+    only generates images for newly-qualifying planets.
 
     Args:
         conn: (PGConnection): Postgres db connection.
 
     Returns:
-        List[Dict]: Returns a list of planet dictionaries in the format list[{planet_name, image_prompt}].
+        List[Dict]: Returns a list of planet dictionaries in the format list[{planet_name, image_prompt_body}].
 
     Raises:
         DatabaseError: Error running query against postgres.
@@ -57,13 +70,18 @@ def get_planets(conn: PGConnection) -> list[dict]:
             """
             SELECT
                 ip.planet_name,
-                ip.image_prompt
+                ip.image_prompt_body
             FROM marts.mart_planet_image_prompt AS ip
             JOIN marts.mart_planet_profile AS pp ON ip.planet_name = pp.planet_name
+            WHERE pp.habitability_tier IN ('Tier 1', 'Tier 2', 'Tier 3')
+                AND NOT EXISTS (
+                    SELECT 1 FROM marts.planet_images AS pi
+                    WHERE pi.planet_name = ip.planet_name
+                )
             ORDER BY pp.esi_score DESC NULLS LAST
             LIMIT %s
         """,
-            (TOP_N_PLANETS,),
+            (MAX_PLANETS_PER_RUN,),
         )
         rows = cursor.fetchall()
         cursor.close()
@@ -75,7 +93,7 @@ def get_planets(conn: PGConnection) -> list[dict]:
 
 
 def generate_images(prompt: str) -> bytes | None:
-    """Generate a planet image using OpenAI's gpt-image-1-mini.
+    """Generate a planet image using Google's Gemini image model.
 
     Args:
         prompt (str): Image prompt describing a planet's characteristics.
@@ -84,14 +102,17 @@ def generate_images(prompt: str) -> bytes | None:
         bytes | None: Raw image bytes or None on failure.
     """
     try:
-        response = client.images.generate(
-            model="gpt-image-1-mini",
-            prompt=prompt,
-            size="1024x1024",
-            quality="medium",
-            n=1,
+        response = client.models.generate_content(
+            model=IMAGE_MODEL,
+            contents=prompt,
+            config=IMAGE_CONFIG,
         )
-        return base64.b64decode(response.data[0].b64_json)  # type: ignore
+        for part in response.candidates[0].content.parts:
+            if part.inline_data is not None:
+                return part.inline_data.data
+
+        logging.error("Gemini response contained no image data")
+        return None
     except Exception as e:
         logging.error(f"Image generation error: {e}")
         return None
@@ -124,6 +145,7 @@ def upload_to_s3(image_bytes: bytes, planet_name: str) -> str | None:
             Key=key,
             Body=image_bytes,
             ContentType="image/png",
+            CacheControl="no-cache, max-age=0, must-revalidate",
         )
         return url
     except ClientError as e:
@@ -138,13 +160,13 @@ def save_image(
     prompt: str,
     generation_model: str,
 ) -> None:
-    """Store S3 url of planet image to db.
+    """Store S3 url of the planet's comparison image to db.
 
     Args:
         conn (PGConnection): Postgres db connection.
         planet_name (str): Planet's name.
-        image_url (str): S3 url of image's location.
-        prompt (str): Image prompt describing the planets characteristics.
+        image_url (str): S3 url of the Earth-comparison image.
+        prompt (str): Image prompt body describing the planet's characteristics.
         generation_model (str): Model used to generate the image.
 
     Returns:
@@ -178,49 +200,50 @@ def save_image(
 
 
 def main():
-    """Runs planet AI image processing flow."""
+    """Runs planet AI image processing flow — generates one Earth-comparison
+    image per planet."""
     conn = psycopg2.connect(**connection_params)
     planets = get_planets(conn)
 
-    saved_to_s3_count = 0
-    failed_to_s3_count = 0
-    saved_to_db_count = 0
-    failed_to_db_count = 0
+    saved_count = 0
+    failed_count = 0
     failed_planet_list = []
     total_planet_count = len(planets)
 
     for planet_dict in planets:
         planet_name = planet_dict["planet_name"]
-        prompt = planet_dict["image_prompt"]
-        result = generate_images(prompt)
-        time.sleep(5)
-        if result is not None:
-            s3_url = upload_to_s3(result, planet_name)
-            if s3_url is not None:
-                saved_to_s3_count += 1
-                logging.info("Image successfully uploaded to s3!")
-                save_image(conn, planet_name, s3_url, prompt, "gpt-image-1-mini")
-                saved_to_db_count += 1
-                logging.info("Image S3 location saved to db.")
-            else:
-                failed_to_s3_count += 1
-                failed_planet_list.append(planet_name)
-                logging.warning(f"S3 upload failed for {planet_name}")
-        else:
-            failed_to_s3_count += 1
+        body = planet_dict["image_prompt_body"]
+
+        image_bytes = generate_images(body)
+        time.sleep(3)
+
+        if image_bytes is None:
+            failed_count += 1
             failed_planet_list.append(planet_name)
             logging.warning(f"Image generation failed for {planet_name}")
+            continue
+
+        image_url = upload_to_s3(image_bytes, planet_name)
+
+        if image_url is None:
+            failed_count += 1
+            failed_planet_list.append(planet_name)
+            logging.warning(f"S3 upload failed for {planet_name}")
+            continue
+
+        save_image(conn, planet_name, image_url, body, IMAGE_MODEL)
+        saved_count += 1
+        logging.info(f"Image saved for {planet_name}.")
 
     conn.close()
     return {
         "total_planets": total_planet_count,
-        "saved_to_s3": saved_to_s3_count,
-        "failed_to_s3": failed_to_s3_count,
-        "s3_success_rate": f"{(saved_to_s3_count / total_planet_count * 100):.1f}%"
+        "saved": saved_count,
+        "failed": failed_count,
+        "success_rate": f"{(saved_count / total_planet_count * 100):.1f}%"
         if total_planet_count > 0
         else "N/A",
-        "saved_to_db": saved_to_db_count,
-        "failed_to_db": failed_to_db_count,
+        "failed_planets": failed_planet_list,
     }
 
 

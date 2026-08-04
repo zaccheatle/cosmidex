@@ -1,6 +1,6 @@
 # CosmiDex
 
-A Pokédex-style cosmic explorer app: NASA confirmed exoplanets (PSCompPars dataset) shown as interactive cards with AI-generated artwork, Earth-relative stats, habitability scores, and experiential descriptions. Solo full-stack data engineering portfolio project — displays the top 25 planets ordered by `esi_score DESC` (Earth Similarity Index). Note: an earlier `is_notable` curation flag was removed; ordering is ESI-only now.
+A Pokédex-style cosmic explorer app: NASA confirmed exoplanets (PSCompPars dataset) shown as interactive cards with AI-generated artwork, Earth-relative stats, habitability scores, and experiential descriptions. Solo full-stack data engineering portfolio project — displays all potentially habitable planets (habitability_tier IN Tier 1/2/3, currently 75 of 6,324 confirmed exoplanets), ordered by `esi_score DESC`. Note: an earlier `is_notable` curation flag was removed, and the display scope changed from a fixed top-N-by-ESI to a dynamic tier-based set on 2026-07-30 (ordering by ESI alone could surface Non-Habitable planets that just happened to score high on physical similarity but sit outside the habitable zone).
 
 ## Stack
 
@@ -13,8 +13,8 @@ A Pokédex-style cosmic explorer app: NASA confirmed exoplanets (PSCompPars data
 | Transformation | dbt (Bronze → Silver → Gold) |
 | API | FastAPI |
 | Frontend | React + Vite |
-| Images | AWS S3 + OpenAI gpt-image-1-mini |
-| Descriptions | OpenAI GPT-4o |
+| Images | AWS S3 + Google Gemini (gemini-3.1-flash-image) |
+| Descriptions | Google Gemini (gemini-3.5-flash) |
 | Infra | Terraform (AWS), GitHub Actions CI/CD |
 | Planned AI chat | Claude API + MCP tools + pgvector RAG |
 
@@ -66,6 +66,6 @@ A Pokédex-style cosmic explorer app: NASA confirmed exoplanets (PSCompPars data
 
 Built: `raw_nasa_data`, `validated_nasa_data`.
 In progress: `check_file_hash` (compare hash to `raw.pipeline_state`, skip if unchanged, detect new planets), `load_bronze` (DROP CASCADE + full reload + store new hash), `audit_log` (write run metadata to `raw.pipeline_audit`).
-Next up: weekly Dagster schedule, then `generate_descriptions.py` (GPT-4o, mirrors the `generate_images.py` pattern in `src/`).
+Next up: weekly Dagster schedule, then `generate_descriptions.py` (Gemini, mirrors the `generate_images.py` pattern in `src/`).
 
 See milestone roadmap (M2 dbt, M3 API, M4 frontend, M5 AWS infra, M6 CI/CD, M7 MCP chat & RAG) in project history if needed — ask if you want it re-summarized.

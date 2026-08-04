@@ -13,7 +13,7 @@ function ChatShell() {
         onClick={() => setOpen(o => !o)}
         aria-label={open ? 'Close Cosmo chat' : 'Open Cosmo chat'}
       >
-        {open ? '✕' : '🌌'}
+        {open ? '✕' : '💬'}
       </button>
 
       {open && (
