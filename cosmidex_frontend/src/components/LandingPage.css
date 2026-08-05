@@ -116,7 +116,7 @@
   box-shadow: 0 0 24px rgba(74, 158, 255, 0.6);
 }
 
-.landing-methodology-btn {
+.landing-about-btn {
   background: transparent;
   border: 1px solid #2e2e4e;
   color: #8888aa;
@@ -127,7 +127,7 @@
   transition: all 0.2s;
 }
 
-.landing-methodology-btn:hover {
+.landing-about-btn:hover {
   background: #1e1e2e;
   color: #ffffff;
 }

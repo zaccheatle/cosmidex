@@ -28,18 +28,24 @@ const STAR_COLORS = {
 }
 
 const WIDTH = 900
-const HEIGHT = 218
+const HEIGHT = 270
 const MARGIN_X = 70
-const BASELINE_Y = 121
+const BASELINE_Y = 155
+
+// Every label sits in a fixed vertical "tier" — a multiple of TIER_UNIT away
+// from the baseline — rather than being nudged reactively when it happens to
+// land near another label. Same-tier items only need to be sorted out
+// horizontally (see dodgeDot); different tiers can never collide, no matter
+// how close two orbits are in AU. Tier 0 is the baseline itself:
+//   Tier 1 (below): host star name + inner reference planets
+//   Tier 1.5 (below): habitable-zone boundary markers, between tiers 1 and 2
+//   Tier 2 (above): Earth
+//   Tier 3 (above): this exoplanet
+const TIER_UNIT = 42
 
 // If the exoplanet's dot would land this close (in px) to a fixed reference
 // dot, nudge the reference dot sideways so neither is hidden behind the other.
 const DOT_COLLISION_GAP = 18
-
-// If the exoplanet's label would land this close (in px) to Earth's label
-// (same row), lift the exoplanet's label higher so the two don't overlap.
-const EARTH_LABEL_COLLISION_GAP = 90
-const EXOPLANET_LIFT = 32
 
 /**
  * Convert an orbital distance in AU to an SVG x-coordinate on the log scale,
@@ -118,35 +124,43 @@ export default function OrbitScale({
   const hzInnerX = hasHz ? auToX(hzInnerAu) : null
   const hzOuterX = hasHz ? auToX(hzOuterAu) : null
 
-  // If the exoplanet lands right on top of Earth's label row, lift the
-  // exoplanet's label out of the way (its dotted line just gets longer).
-  const exoplanetLift =
-    Math.abs(planetX - earthX) < EARTH_LABEL_COLLISION_GAP ? EXOPLANET_LIFT : 0
-
   return (
     <div className="orbit-scale">
       <p className="orbit-scale-subtitle">
-        <span className="orbit-scale-legend-swatch" /> Habitable zone of the planet's host star
+        <span className="orbit-scale-legend-swatch" /> Conservative habitable zone of host star
       </p>
       <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="orbit-scale-svg" preserveAspectRatio="xMidYMid meet">
         {hasHz && (
           <>
             <rect
               x={hzInnerX}
-              y={BASELINE_Y - 21}
+              y={BASELINE_Y - 45}
               width={Math.max(hzOuterX - hzInnerX, 1)}
-              height={42}
+              height={70}
               fill="rgba(94, 222, 140, 0.18)"
               stroke="rgba(94, 222, 140, 0.5)"
               strokeWidth="1"
             />
-            {/* Box-plot-style whisker caps marking the HZ start/end distances */}
-            <line x1={hzInnerX} x2={hzInnerX} y1={BASELINE_Y + 21} y2={BASELINE_Y + 27} stroke="rgba(94, 222, 140, 0.8)" strokeWidth="2" />
-            <text x={hzInnerX} y={BASELINE_Y + 40} textAnchor="middle" className="orbit-scale-label-hz">
+            {/* Square bracket markers spanning the full box height, pinpointing
+                the exact HZ start/end distances */}
+            <path
+              d={`M ${hzInnerX - 5} ${BASELINE_Y - 45} H ${hzInnerX} V ${BASELINE_Y + 1.5 * TIER_UNIT} H ${hzInnerX - 5}`}
+              fill="none"
+              stroke="rgba(94, 222, 140, 0.9)"
+              strokeWidth="2"
+              strokeDasharray="3,3"
+            />
+            <text x={hzInnerX} y={BASELINE_Y + 1.5 * TIER_UNIT + 16} textAnchor="middle" className="orbit-scale-label-hz">
               {auLabel(hzInnerAu)}
             </text>
-            <line x1={hzOuterX} x2={hzOuterX} y1={BASELINE_Y + 21} y2={BASELINE_Y + 27} stroke="rgba(94, 222, 140, 0.8)" strokeWidth="2" />
-            <text x={hzOuterX} y={BASELINE_Y + 40} textAnchor="middle" className="orbit-scale-label-hz">
+            <path
+              d={`M ${hzOuterX + 5} ${BASELINE_Y - 45} H ${hzOuterX} V ${BASELINE_Y + 1.5 * TIER_UNIT} H ${hzOuterX + 5}`}
+              fill="none"
+              stroke="rgba(94, 222, 140, 0.9)"
+              strokeWidth="2"
+              strokeDasharray="3,3"
+            />
+            <text x={hzOuterX} y={BASELINE_Y + 1.5 * TIER_UNIT + 16} textAnchor="middle" className="orbit-scale-label-hz">
               {auLabel(hzOuterAu)}
             </text>
           </>
@@ -158,14 +172,14 @@ export default function OrbitScale({
         <circle cx={MARGIN_X} cy={BASELINE_Y} r="14" fill={starColorFor(hostStarSpectralType)} />
         <text
           x={MARGIN_X}
-          y={BASELINE_Y + 34}
+          y={BASELINE_Y + TIER_UNIT}
           textAnchor="middle"
           className="orbit-scale-label"
           style={{ fill: starColorFor(hostStarSpectralType) }}
         >
           {hostStarName ?? 'Host Star'}
         </text>
-        <text x={MARGIN_X} y={BASELINE_Y + 48} textAnchor="middle" className="orbit-scale-label orbit-scale-label-muted">
+        <text x={MARGIN_X} y={BASELINE_Y + TIER_UNIT + 20} textAnchor="middle" className="orbit-scale-label orbit-scale-label-muted">
           (Host Star)
         </text>
 
@@ -176,7 +190,7 @@ export default function OrbitScale({
               <circle cx={refX} cy={BASELINE_Y} r="7" fill={p.color} />
               <text
                 x={refX}
-                y={(p.name === 'Mars' ? i % 2 !== 0 : i % 2 === 0) ? BASELINE_Y - 18 : BASELINE_Y + 34}
+                y={(p.name === 'Mars' ? i % 2 !== 0 : i % 2 === 0) ? BASELINE_Y - 21 : BASELINE_Y + TIER_UNIT}
                 textAnchor="middle"
                 className="orbit-scale-label"
               >
@@ -186,25 +200,26 @@ export default function OrbitScale({
           )
         })}
 
-        {/* Earth — green marker + two-line label (green, not blue, so it never
-            visually blends with the blue exoplanet marker when they overlap) */}
-        <line x1={earthX} x2={earthX} y1={BASELINE_Y - 45} y2={BASELINE_Y - 6} stroke="rgba(94, 222, 140, 0.7)" strokeWidth="2" strokeDasharray="3,3" />
-        <circle cx={earthX} cy={BASELINE_Y} r="7" fill="#5ede8c" />
-        <text x={earthX} y={BASELINE_Y - 69} textAnchor="middle" className="orbit-scale-label-green">
+        {/* Earth — blue marker + two-line label (blue, not purple, so it never
+            visually blends with the purple exoplanet marker) — tier 2, always
+            one full tier above the exoplanet regardless of how close in AU */}
+        <line x1={earthX} x2={earthX} y1={BASELINE_Y - 2 * TIER_UNIT + 24} y2={BASELINE_Y} stroke="rgba(74, 158, 255, 0.7)" strokeWidth="2" strokeDasharray="3,3" />
+        <circle cx={earthX} cy={BASELINE_Y} r="7" fill="#4a9eff" />
+        <text x={earthX} y={BASELINE_Y - 2 * TIER_UNIT} textAnchor="middle" className="orbit-scale-label-green">
           Earth
         </text>
-        <text x={earthX} y={BASELINE_Y - 52} textAnchor="middle" className="orbit-scale-label-green-muted">
+        <text x={earthX} y={BASELINE_Y - 2 * TIER_UNIT + 17} textAnchor="middle" className="orbit-scale-label-green-muted">
           {auLabel(1.0)}
         </text>
 
-        {/* This exoplanet — connected to the baseline by a dotted line, lifted
-            higher (with a longer line) if it would otherwise overlap Earth's label */}
-        <line x1={planetX} x2={planetX} y1={BASELINE_Y - 45 - exoplanetLift} y2={BASELINE_Y - 10} stroke="rgba(74, 158, 255, 0.6)" strokeWidth="2" strokeDasharray="3,3" />
-        <circle cx={planetX} cy={BASELINE_Y} r="11" fill="#4a9eff" stroke="#ffffff" strokeWidth="1.5" />
-        <text x={planetX} y={BASELINE_Y - 69 - exoplanetLift} textAnchor="middle" className="orbit-scale-label orbit-scale-label-planet">
+        {/* This exoplanet — tier 3, one full tier above Earth, so the two
+            never collide no matter how close their orbits are */}
+        <line x1={planetX} x2={planetX} y1={BASELINE_Y - 3 * TIER_UNIT + 24} y2={BASELINE_Y} stroke="rgba(191, 95, 255, 0.6)" strokeWidth="2" strokeDasharray="3,3" />
+        <circle cx={planetX} cy={BASELINE_Y} r="11" fill="#bf5fff" stroke="#ffffff" strokeWidth="1.5" />
+        <text x={planetX} y={BASELINE_Y - 3 * TIER_UNIT} textAnchor="middle" className="orbit-scale-label orbit-scale-label-planet">
           {planetName}
         </text>
-        <text x={planetX} y={BASELINE_Y - 52 - exoplanetLift} textAnchor="middle" className="orbit-scale-label orbit-scale-label-muted">
+        <text x={planetX} y={BASELINE_Y - 3 * TIER_UNIT + 17} textAnchor="middle" className="orbit-scale-label orbit-scale-label-muted">
           {auLabel(orbitalAu)}
         </text>
       </svg>

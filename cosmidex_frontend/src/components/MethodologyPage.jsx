@@ -17,21 +17,6 @@ export default function MethodologyPage({ onClose }) {
         <h1>Methodology &amp; Sources</h1>
 
         <section>
-          <h2>Author</h2>
-          <h3>Zac Cheatle</h3>
-          <p>
-            {' '}
-            <a href="https://github.com/zaccheatle/cosmidex" target="_blank" rel="noreferrer">
-              Cosmidex Github Repository
-            </a>{' '} |
-            {' '}
-            <a href="https://www.linkedin.com/in/zaccheatle/" target="_blank" rel="noreferrer">
-              LinkedIn
-            </a>{' '}
-          </p>
-        </section>
-
-        <section>
           <h2>Architecture</h2>
           <p>
             ELT data pipelines orchestrated via Dagster extract data from source → validate → load into Postgres →

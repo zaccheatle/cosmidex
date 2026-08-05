@@ -4,6 +4,7 @@ import ChatShell from './components/ChatShell'
 import OrbitScale from './components/OrbitScale'
 import MethodologyPage from './components/MethodologyPage'
 import LandingPage from './components/LandingPage'
+import AboutPage from './components/AboutPage'
 import './App.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
@@ -90,6 +91,7 @@ function App() {
   const [detailLoading, setDetailLoading] = useState(false)
   const [detailError, setDetailError] = useState(null)
 
+  const [showAbout, setShowAbout] = useState(false)
   const [showMethodology, setShowMethodology] = useState(false)
   const [showLanding, setShowLanding] = useState(true)
 
@@ -157,9 +159,10 @@ function App() {
       <>
         <LandingPage
           onEnter={() => setShowLanding(false)}
-          onShowMethodology={() => setShowMethodology(true)}
+          onShowAbout={() => setShowAbout(true)}
         />
         {showMethodology && <MethodologyPage onClose={() => setShowMethodology(false)} />}
+        {showAbout && <AboutPage onClose={() => setShowAbout(false)} />}
       </>
     )
   }
@@ -172,7 +175,7 @@ function App() {
           <h1>🌌 Cosmidex: A Codex for the Cosmos</h1>
           <div className="header-link-group">
             <button className="methodology-link" onClick={() => setShowLanding(true)}>
-              Landing Page
+              Launch Pad
             </button>
             <button className="methodology-link" onClick={() => setShowMethodology(true)}>
               Methodology &amp; Sources

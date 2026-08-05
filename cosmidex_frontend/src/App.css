@@ -241,7 +241,7 @@ body {
 }
 
 .orbit-scale {
-  height: 250px;
+  height: 310px;
   padding: 0.5rem 0 0.75rem;
   display: flex;
   flex-direction: column;
@@ -294,24 +294,24 @@ body {
 }
 
 .orbit-scale-label-planet {
-  fill: #4a9eff;
+  fill: #bf5fff;
   font-weight: 600;
   font-size: 24px;
 }
 
 .orbit-scale-label-green {
-  fill: #5ede8c;
+  fill: #4a9eff;
   font-weight: 600;
   font-size: 24px;
 }
 
 .orbit-scale-label-green-muted {
-  fill: rgba(94, 222, 140, 0.8);
+  fill: #8888aa;
   font-size: 19px;
 }
 
 .orbit-scale-label-hz {
-  fill: rgba(94, 222, 140, 0.9);
+  fill: #8888aa;
   font-size: 13px;
 }
 

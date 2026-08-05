@@ -1,0 +1,83 @@
+.about-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 5, 8, 0.92);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 3rem 1.5rem;
+}
+
+.about-panel {
+  position: relative;
+  max-width: 720px;
+  width: 100%;
+  background: #12121a;
+  border: 1px solid #2e2e4e;
+  border-radius: 8px;
+  padding: 2.5rem;
+  color: #cccccc;
+  line-height: 1.6;
+  height: fit-content;
+}
+
+.about-panel h1 {
+  color: #4a9eff;
+  text-shadow: 0 0 8px rgba(74, 158, 255, 0.6);
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+}
+
+.about-panel h2 {
+  color: #bf5fff;
+  text-shadow: 0 0 8px rgba(191, 95, 255, 0.6);
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.5rem;
+}
+
+.about-panel section {
+  margin-bottom: 1.75rem;
+}
+
+.about-panel p {
+  margin-bottom: 0.75rem;
+}
+
+.about-panel ul {
+  padding-left: 1.25rem;
+}
+
+.about-panel li {
+  margin-bottom: 0.5rem;
+}
+
+.about-panel code {
+  background: #1e1e2e;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.about-panel a {
+  color: #4a9eff;
+}
+
+.about-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: transparent;
+  border: none;
+  color: #8888aa;
+  font-size: 1.75rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.about-close:hover {
+  color: #ffffff;
+}

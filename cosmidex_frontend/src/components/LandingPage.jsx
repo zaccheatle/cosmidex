@@ -1,4 +1,5 @@
 import './LandingPage.css'
+import './AboutPage.css'
 
 /**
  * Intro/hero screen shown before the planet explorer — gives cold visitors
@@ -8,16 +9,16 @@ import './LandingPage.css'
  *
  * @param props
  * @param props.onEnter - Called when the user clicks through to the explorer.
- * @param props.onShowMethodology - Called when the user clicks "Methodology & Sources".
+ * @param props.onShowAbout - Called when the user clicks "About".
  * @returns The landing page overlay.
  */
-export default function LandingPage({ onEnter, onShowMethodology }) {
+export default function LandingPage({ onEnter, onShowAbout }) {
   return (
     <div className="landing-page">
       <div className="landing-starfield" />
 
-      <div className="landing-content">
-        <h1 className="landing-title">🌌 Cosmidex</h1>
+      <div className="landing-content"> 
+        <h1 className="landing-title">🌌Cosmidex</h1>
         <p className="landing-tagline">A Codex for the Cosmos</p>
 
         <p className="landing-intro">
@@ -39,7 +40,7 @@ export default function LandingPage({ onEnter, onShowMethodology }) {
           <button className="landing-enter-btn" onClick={onEnter}>
             Explore the Codex→
           </button>
-          <button className="landing-methodology-btn" onClick={onShowMethodology}>
+          <button className="landing-about-btn" onClick={onShowAbout}>
             About
           </button>
         </div>
