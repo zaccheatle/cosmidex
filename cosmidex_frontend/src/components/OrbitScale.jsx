@@ -131,39 +131,15 @@ export default function OrbitScale({
       </p>
       <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="orbit-scale-svg" preserveAspectRatio="xMidYMid meet">
         {hasHz && (
-          <>
-            <rect
-              x={hzInnerX}
-              y={BASELINE_Y - 45}
-              width={Math.max(hzOuterX - hzInnerX, 1)}
-              height={70}
-              fill="rgba(94, 222, 140, 0.18)"
-              stroke="rgba(94, 222, 140, 0.5)"
-              strokeWidth="1"
-            />
-            {/* Square bracket markers spanning the full box height, pinpointing
-                the exact HZ start/end distances */}
-            <path
-              d={`M ${hzInnerX - 5} ${BASELINE_Y - 45} H ${hzInnerX} V ${BASELINE_Y + 1.5 * TIER_UNIT} H ${hzInnerX - 5}`}
-              fill="none"
-              stroke="rgba(94, 222, 140, 0.9)"
-              strokeWidth="2"
-              strokeDasharray="3,3"
-            />
-            <text x={hzInnerX} y={BASELINE_Y + 1.5 * TIER_UNIT + 16} textAnchor="middle" className="orbit-scale-label-hz">
-              {auLabel(hzInnerAu)}
-            </text>
-            <path
-              d={`M ${hzOuterX + 5} ${BASELINE_Y - 45} H ${hzOuterX} V ${BASELINE_Y + 1.5 * TIER_UNIT} H ${hzOuterX + 5}`}
-              fill="none"
-              stroke="rgba(94, 222, 140, 0.9)"
-              strokeWidth="2"
-              strokeDasharray="3,3"
-            />
-            <text x={hzOuterX} y={BASELINE_Y + 1.5 * TIER_UNIT + 16} textAnchor="middle" className="orbit-scale-label-hz">
-              {auLabel(hzOuterAu)}
-            </text>
-          </>
+          <rect
+            x={hzInnerX}
+            y={BASELINE_Y - 45}
+            width={Math.max(hzOuterX - hzInnerX, 1)}
+            height={70}
+            fill="rgba(94, 222, 140, 0.18)"
+            stroke="rgba(94, 222, 140, 0.5)"
+            strokeWidth="1"
+          />
         )}
 
         <line x1={MARGIN_X} y1={BASELINE_Y} x2={WIDTH - MARGIN_X} y2={BASELINE_Y} stroke="#2e2e4e" strokeWidth="2.5" />

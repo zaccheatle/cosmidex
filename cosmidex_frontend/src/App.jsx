@@ -255,10 +255,6 @@ function App() {
                   {detailLoading && <div className="state-message">Loading…</div>}
                   {!detailLoading && currentPlanet && currentPlanet.image_url && (
                     <>
-                      <div
-                        className="planet-image-backdrop"
-                        style={{ backgroundImage: `url(${currentPlanet.image_url})` }}
-                      />
                       <img src={currentPlanet.image_url} alt={currentPlanet.planet_name} />
                       <span className="ai-generated-note">*AI-generated image</span>
                     </>
@@ -378,7 +374,7 @@ function App() {
                       </div>
 
                     <hr />
-                      <p className="section-label">Solar System Context<Tooltip text={`${currentPlanet.planet_name}'s orbital distance (in AU) plotted on a log scale against our solar system's inner planets, so you can visualize its orbit in the context of our solar system.`} /></p>
+                      <p className="section-label">Solar System Context<Tooltip text={<><span className="tooltip-highlight">{currentPlanet.planet_name}</span>'s orbital distance (in AU) plotted on a log scale against our solar system's inner planets, so you can visualize its orbit in the context of our solar system.</>} /></p>
                       <OrbitScale
                         planetName={currentPlanet.planet_name}
                         hostStarName={currentPlanet.host_star_name}
