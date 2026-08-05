@@ -30,10 +30,6 @@ export default function LandingPage({ onEnter, onShowAbout }) {
             <span className="landing-stat-value">6,324</span>
             <span className="landing-stat-label">Confirmed Exoplanets</span>
           </div>
-          <div className="landing-stat">
-            <span className="landing-stat-value">75</span>
-            <span className="landing-stat-label">Potentially Habitable Worlds</span>
-          </div>
         </div>
 
         <div className="landing-actions">

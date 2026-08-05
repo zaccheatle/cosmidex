@@ -4,6 +4,7 @@ import ChatShell from './components/ChatShell'
 import OrbitScale from './components/OrbitScale'
 import MethodologyPage from './components/MethodologyPage'
 import LandingPage from './components/LandingPage'
+import EntityOverview from './components/EntityOverview'
 import AboutPage from './components/AboutPage'
 import './App.css'
 
@@ -86,6 +87,7 @@ function App() {
   const [selectedEntity, setSelectedEntity] = useState('Exoplanets')
   const [selectedTier, setSelectedTier] = useState('All')
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [atEntityIntro, setAtEntityIntro] = useState(true)
 
   const [currentPlanet, setCurrentPlanet] = useState(null)
   const [detailLoading, setDetailLoading] = useState(false)
@@ -174,7 +176,7 @@ function App() {
         <div className="top-left">
           <h1>🌌 Cosmidex: A Codex for the Cosmos</h1>
           <div className="header-link-group">
-            <button className="methodology-link" title="Return to the Cosmidex home page" onClick={() => setShowLanding(true)}>
+            <button className="methodology-link" title="Return to the Cosmidex home page" onClick={() => { setShowLanding(true); setAtEntityIntro(true) }}>
               Launch Pad
             </button>
             <button className="methodology-link" title="The methodology and data sources powering this project" onClick={() => setShowMethodology(true)}>
@@ -192,7 +194,7 @@ function App() {
                   title={entity === 'Exoplanets' ? 'NASA confirmed planets in the Milky Way that orbit a star other than our Sun.' : 'Coming soon'}
                   className={`entity-btn ${selectedEntity === entity ? 'active' : ''}`}
                   disabled={entity !== 'Exoplanets'}
-                  onClick={() => setSelectedEntity(entity)}
+                  onClick={() => { setSelectedEntity(entity); setAtEntityIntro(true) }}
                 >
                   {entity}
                 </button>
@@ -233,6 +235,11 @@ function App() {
 
       {!listLoading && !listError && filteredPlanets.length > 0 && (
         <>
+          {atEntityIntro && (
+            <EntityOverview entity={selectedEntity} planets={planets} listLoading={listLoading} />
+          )}
+
+          {!atEntityIntro && (
           <main className="viewer">
             <div className="left-panel">
               <div className="image-section">
@@ -388,13 +395,26 @@ function App() {
               </div>
             </div>
           </main>
+          )}
 
           <footer className="navigation">
-            <button onClick={() => setCurrentIndex(i => i - 1)} disabled={currentIndex === 0}>
+            <button
+              onClick={() => {
+                if (currentIndex === 0) setAtEntityIntro(true)
+                else setCurrentIndex(i => i - 1)
+              }}
+              disabled={atEntityIntro}
+            >
               ← Previous
             </button>
-            <span>{currentIndex + 1} / {filteredPlanets.length}</span>
-            <button onClick={() => setCurrentIndex(i => i + 1)} disabled={currentIndex === filteredPlanets.length - 1}>
+            <span>{atEntityIntro ? 'Overview' : `${currentIndex + 1} / ${filteredPlanets.length}`}</span>
+            <button
+              onClick={() => {
+                if (atEntityIntro) setAtEntityIntro(false)
+                else setCurrentIndex(i => i + 1)
+              }}
+              disabled={!atEntityIntro && currentIndex === filteredPlanets.length - 1}
+            >
               Next →
             </button>
           </footer>
