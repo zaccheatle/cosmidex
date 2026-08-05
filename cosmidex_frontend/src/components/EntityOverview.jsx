@@ -9,8 +9,8 @@ const ENTITY_CONTENT = {
     description:
       'For most of human history, every planet we knew belonged to our solar system . . .  '+
       'that changed in 1995, when astronomers in France caught a glimpse of the first exoplanet: '+
-      'a planet within our galaxy orbiting a sun-like star other than our own. Since then, over sixty-three ' +
-      'hundred exoplanets have been added to the Exoplanet Archive at NASA. Cosmidex focuses on the ones that may be capable of hosting life.',
+      'a planet within the Milky Way orbiting a sun-like star other than our own. Since then, over sixty-three ' +
+      'hundred planets have been added to the Exoplanet Archive at NASA. Cosmidex focuses on the ones that may be capable of hosting life.',
   },
 }
 
@@ -98,28 +98,8 @@ export default function EntityOverview({ entity, planets, listLoading }) {
             <>
               <div className="entity-overview-stat">
                 <span className="entity-overview-stat-value">{stats.tier1} / {stats.tier2} / {stats.tier3}</span>
-                <span className="entity-overview-stat-label">Tier 1 / 2 / 3 Breakdown</span>
+                <span className="entity-overview-stat-label">Tier 1 / 2 / 3</span>
               </div>
-              {stats.avgEsi && (
-                <div className="entity-overview-stat">
-                  <span className="entity-overview-stat-value">{stats.avgEsi}</span>
-                  <span className="entity-overview-stat-label">Average ESI Score</span>
-                </div>
-              )}
-              {stats.topSpectralType && (
-                <div className="entity-overview-stat">
-                  <span className="entity-overview-stat-value">{stats.topSpectralType}</span>
-                  <span className="entity-overview-stat-label">Most Common Host Star</span>
-                </div>
-              )}
-              {stats.closest && (
-                <div className="entity-overview-stat">
-                  <span className="entity-overview-stat-value">{stats.closest.planet_name}</span>
-                  <span className="entity-overview-stat-label">
-                    Closest Habitable World ({stats.closest.star_distance_light_years.toFixed(1)} ly)
-                  </span>
-                </div>
-              )}
             </>
           )}
         </div>
