@@ -37,10 +37,10 @@ export default function LandingPage({ onEnter, onShowAbout }) {
         </div>
 
         <div className="landing-actions">
-          <button className="landing-enter-btn" onClick={onEnter}>
+          <button className="landing-enter-btn" title="Enter the planet explorer" onClick={onEnter}>
             Explore the Codex→
           </button>
-          <button className="landing-about-btn" onClick={onShowAbout}>
+          <button className="landing-about-btn" title="About the project and its author" onClick={onShowAbout}>
             About
           </button>
         </div>

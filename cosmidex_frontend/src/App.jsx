@@ -174,10 +174,10 @@ function App() {
         <div className="top-left">
           <h1>🌌 Cosmidex: A Codex for the Cosmos</h1>
           <div className="header-link-group">
-            <button className="methodology-link" onClick={() => setShowLanding(true)}>
+            <button className="methodology-link" title="Return to the Cosmidex home page" onClick={() => setShowLanding(true)}>
               Launch Pad
             </button>
-            <button className="methodology-link" onClick={() => setShowMethodology(true)}>
+            <button className="methodology-link" title="The methodology and data sources powering this project" onClick={() => setShowMethodology(true)}>
               Methodology &amp; Sources
             </button>
           </div>
@@ -189,7 +189,7 @@ function App() {
               {ENTITY_OPTIONS.map(entity => (
                 <button
                   key={entity}
-                  title={entity === 'Exoplanets' ? 'NASA confirmed exoplanets' : 'Coming soon'}
+                  title={entity === 'Exoplanets' ? 'NASA confirmed planets in the Milky Way that orbit a star other than our Sun.' : 'Coming soon'}
                   className={`entity-btn ${selectedEntity === entity ? 'active' : ''}`}
                   disabled={entity !== 'Exoplanets'}
                   onClick={() => setSelectedEntity(entity)}
