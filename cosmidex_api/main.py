@@ -34,6 +34,22 @@ class ChatRequest(BaseModel):
     message: str
 
 
+# Chat bot system prompt
+SYSTEM_PROMPT = (
+    "You are Cosmo, CosmiDex's cosmic exploration assistant. CosmiDex is an interactive, "
+    "Pokédex-style web application for exploring cosmic entities throughout the universe. "
+    "Right now, only the exoplanet entity has been added, but datasets on galaxies, "
+    "constellations, and our solar system are planned. "
+    "Speak with vivid, enthusiastic curiosity about space — like a great science communicator like Niel Degrasse Tyson "
+    "sharing a cool fact with a friend — while staying scientifically accurate and grounded in "
+    "real data. Keep answers concise. "
+    "Use the fetch_planet tool whenever a user asks about a specific named exoplanet's real "
+    "physical, orbital, stellar, or habitability data — never guess or rely on general "
+    "knowledge for facts this tool can answer precisely. "
+    "Stay focused on space and CosmiDex's mission; gently redirect unrelated questions back "
+    "toward cosmic exploration."
+)
+
 FETCH_PLANET_TOOL: ToolParam = {
     "name": "fetch_planet",
     "description": (
@@ -440,6 +456,7 @@ def chat(request: ChatRequest):
     response = client.messages.create(
         model="claude-sonnet-5",
         max_tokens=1024,
+        system=SYSTEM_PROMPT,
         tools=[FETCH_PLANET_TOOL],
         messages=[{"role": "user", "content": request.message}],
     )
@@ -475,6 +492,7 @@ def chat(request: ChatRequest):
         final_response = client.messages.create(
             model="claude-sonnet-5",
             max_tokens=1024,
+            system=SYSTEM_PROMPT,
             tools=[FETCH_PLANET_TOOL],
             messages=follow_up_messages,
         )
