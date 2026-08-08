@@ -52,12 +52,30 @@
   padding: 1rem;
   overflow-y: auto;
   min-height: 120px;
+  display: flex;
+  flex-direction: column;
 }
 
 .chat-message {
   font-size: 0.9rem;
-  color: #8888aa;
   line-height: 1.4;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  max-width: 85%;
+}
+
+.chat-message-assistant {
+  color: #cccccc;
+  background: #1e1e2e;
+  align-self: flex-start;
+}
+
+.chat-message-user {
+  color: #ffffff;
+  background: rgba(74, 158, 255, 0.25);
+  align-self: flex-end;
+  margin-left: auto;
 }
 
 .chat-input-row {
@@ -79,9 +97,13 @@
 }
 
 .chat-input-row button {
-  background: #2e2e4e;
-  color: #8888aa;
+  background: #4a9eff;
+  color: #ffffff;
   border: none;
   padding: 0.6rem 1rem;
-  cursor: not-allowed;
+  cursor: pointer;
+}
+
+.chat-input-row button:hover {
+  background: #3a8eef;
 }

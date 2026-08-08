@@ -8,19 +8,67 @@ from contextlib import asynccontextmanager
 from decimal import Decimal
 from typing import AsyncGenerator
 
+import anthropic
 import psycopg2.extras
+from anthropic.types import ToolParam
 from database import get_db, test_connection
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, Query, Security
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.security import APIKeyHeader
+from pydantic import BaseModel
+
+from cosmidex_mcp.tools.exoplanets import fetch_planet
 
 load_dotenv()
 
 # ######################################
 # DEFINE HELPER FUNCTIONS
 # ######################################
+
+client = anthropic.Anthropic()
+
+
+class ChatRequest(BaseModel):
+    message: str
+
+
+FETCH_PLANET_TOOL: ToolParam = {
+    "name": "fetch_planet",
+    "description": (
+        "Look up precise, structured data for one confirmed exoplanet from CosmiDex's "
+        "own database — derived from NASA's Exoplanet Archive (PSCompPars) and enriched "
+        "with CosmiDex's own calculated habitability scoring. Use this whenever a user "
+        "asks about a specific named exoplanet's physical properties (radius, mass, "
+        "density, composition, size class), orbital characteristics (semi-major axis, "
+        "eccentricity, period, stability), host star data (spectral type, temperature, "
+        "age, distance from Earth), or habitability metrics (Earth Similarity Index, "
+        "habitable-zone membership and distance, habitability tier). This is CosmiDex's "
+        "authoritative, precomputed data for these planets — prefer it over general "
+        "knowledge or web search whenever the question is about a planet potentially "
+        "covered by this database, since values here are exact, sourced, and consistent "
+        "with the rest of the CosmiDex dataset, rather than approximate or aggregated "
+        "from varied external sources. Returns the planet's full physical, orbital, "
+        "stellar, and habitability data, plus an AI-generated image URL and description "
+        "where available."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "planet_name": {
+                "type": "string",
+                "description": (
+                    "The exoplanet's exact name as catalogued by NASA, e.g. "
+                    "'TRAPPIST-1 e', 'Kepler-442 b', 'Proxima Cen b'. Matching is an "
+                    "exact, case-sensitive string match against the stored name — "
+                    "not a fuzzy or partial search."
+                ),
+            }
+        },
+        "required": ["planet_name"],
+    },
+}
 
 
 class DecimalEncoder(json.JSONEncoder):
@@ -356,3 +404,81 @@ def get_planet(planet_name: str, db=Depends(get_db)):
     if row is None:
         raise HTTPException(status_code=404, detail="Planet not found")
     return decimal_response(row)
+
+
+# ######################################
+# CHAT REQUESTS
+# ######################################
+
+
+def extract_text(content_blocks) -> str | None:
+    """Find the text of the first text-type block in an Anthropic response.
+
+    Args:
+        content_blocks: The `.content` list from an Anthropic Message response.
+
+    Returns:
+        str | None: The first text block's text, or None if there isn't one.
+    """
+    for block in content_blocks:
+        if block.type == "text":
+            return block.text
+    return None
+
+
+@app.post("/chat", dependencies=[Depends(require_api_key)])
+def chat(request: ChatRequest):
+    """Answer a user's chat message, calling `fetch_planet` if Claude decides
+    it needs CosmiDex data to respond.
+
+    Args:
+        request (ChatRequest): The user's chat message.
+
+    Returns:
+        str | None: Claude's final natural-language response.
+    """
+    response = client.messages.create(
+        model="claude-sonnet-5",
+        max_tokens=1024,
+        tools=[FETCH_PLANET_TOOL],
+        messages=[{"role": "user", "content": request.message}],
+    )
+
+    if response.stop_reason != "tool_use":
+        return extract_text(response.content)
+
+    for element in response.content:
+        if element.type != "tool_use":
+            continue
+
+        try:
+            result = fetch_planet(planet_name=str(element.input["planet_name"]))
+            result_text = str(result)
+        except ValueError:
+            result_text = "Hmm... I didn't find the planet you are looking for, can you double check the spelling?"
+
+        follow_up_messages = [
+            {"role": "user", "content": request.message},
+            {"role": "assistant", "content": response.content},
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": element.id,
+                        "content": result_text,
+                    }
+                ],
+            },
+        ]
+
+        final_response = client.messages.create(
+            model="claude-sonnet-5",
+            max_tokens=1024,
+            tools=[FETCH_PLANET_TOOL],
+            messages=follow_up_messages,
+        )
+
+        return extract_text(final_response.content)
+
+    return None

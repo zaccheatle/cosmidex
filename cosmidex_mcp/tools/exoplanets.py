@@ -7,7 +7,7 @@ from cosmidex_mcp.mcp_instance import mcp
 
 
 @mcp.tool()
-def get_planet(planet_name: str) -> dict:
+def fetch_planet(planet_name: str) -> dict:
     """Look up precise, structured data for one confirmed exoplanet from CosmiDex's
     own database — derived from NASA's Exoplanet Archive (PSCompPars) and enriched
     with CosmiDex's own calculated habitability scoring. Use this whenever a user

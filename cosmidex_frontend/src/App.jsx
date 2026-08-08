@@ -6,10 +6,8 @@ import MethodologyPage from './components/MethodologyPage'
 import LandingPage from './components/LandingPage'
 import EntityOverview from './components/EntityOverview'
 import AboutPage from './components/AboutPage'
+import { apiFetch } from './api'
 import './App.css'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
-const API_KEY = import.meta.env.VITE_API_KEY
 
 // Constellations and Our Solar System will be added here once those datasets exist.
 const ENTITY_OPTIONS = ['Exoplanets']
@@ -51,24 +49,6 @@ function planetGravityMs2(massEarth, radiusEarth) {
 function planetEscapeVelocityKms(massEarth, radiusEarth) {
   if (massEarth == null || radiusEarth == null || radiusEarth <= 0) return null
   return Math.sqrt(massEarth / radiusEarth) * 11.2
-}
-
-/**
- * Fetch JSON from the CosmiDex API with the required X-API-Key header.
- *
- * @param path - API path (including query string), relative to API_BASE_URL.
- * @returns A promise resolving to the parsed JSON response body.
- * @throws {Error} If the response status is not ok.
- */
-function apiFetch(path) {
-  return fetch(`${API_BASE_URL}${path}`, {
-    headers: { 'X-API-Key': API_KEY },
-  }).then(res => {
-    if (!res.ok) {
-      throw new Error(`Request failed (${res.status})`)
-    }
-    return res.json()
-  })
 }
 
 /**

@@ -7,7 +7,7 @@ directly. Running this file starts the server.
 """
 
 from cosmidex_mcp.mcp_instance import mcp
-from cosmidex_mcp.tools.exoplanets import get_planet
+from cosmidex_mcp.tools.exoplanets import fetch_planet
 
 if __name__ == "__main__":
     mcp.run()
