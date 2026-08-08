@@ -7,10 +7,10 @@ const ENTITY_CONTENT = {
   Exoplanets: {
     title: 'Exoplanets',
     description:
-      'For most of human history, every planet we knew belonged to our solar system . . .  '+
-      'that changed in 1995, when astronomers in France caught a glimpse of the first exoplanet: '+
+      'For most of human history, every planet we knew belonged to our solar system. '+
+      'That changed in 1995, when astronomers in France caught a glimpse of the first exoplanet: '+
       'a planet within the Milky Way orbiting a sun-like star other than our own. Since then, over sixty-three ' +
-      'hundred planets have been added to the Exoplanet Archive at NASA. Cosmidex focuses on the ones that may be capable of hosting life.',
+      'hundred planets have been added to the Exoplanet Archive at NASA. Cosmidex focuses on those that may be capable of hosting life . . .',
   },
 }
 
@@ -97,8 +97,8 @@ export default function EntityOverview({ entity, planets, listLoading }) {
           {stats && (
             <>
               <div className="entity-overview-stat">
-                <span className="entity-overview-stat-value">{stats.tier1} / {stats.tier2} / {stats.tier3}</span>
-                <span className="entity-overview-stat-label">Tier 1 / 2 / 3</span>
+                <span className="entity-overview-stat-value">{stats.tier1}</span>
+                <span className="entity-overview-stat-label">Tier 1 Candidates</span>
               </div>
             </>
           )}
