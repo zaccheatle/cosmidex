@@ -19,6 +19,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.security import APIKeyHeader
 from pydantic import BaseModel
 
+from cosmidex_mcp.tools.articles import search_articles
 from cosmidex_mcp.tools.exoplanets import fetch_planet
 
 load_dotenv()
@@ -26,65 +27,6 @@ load_dotenv()
 # ######################################
 # DEFINE HELPER FUNCTIONS
 # ######################################
-
-client = anthropic.Anthropic()
-
-
-class ChatRequest(BaseModel):
-    message: str
-
-
-# Chat bot system prompt
-SYSTEM_PROMPT = (
-    "You are Cosmo, CosmiDex's cosmic exploration assistant. CosmiDex is an interactive, "
-    "Pokédex-style web application for exploring cosmic entities throughout the universe. "
-    "Right now, only the exoplanet entity has been added, but datasets on galaxies, "
-    "constellations, and our solar system are planned. "
-    "Speak with vivid, enthusiastic curiosity about space — like a great science communicator like Neil deGrasse Tyson "
-    "sharing a cool fact with a friend — while staying scientifically accurate and grounded in "
-    "real data. Keep answers concise. "
-    "Use the fetch_planet tool whenever a user asks about a specific named exoplanet's real "
-    "physical, orbital, stellar, or habitability data — never guess or rely on general "
-    "knowledge for facts this tool can answer precisely. "
-    "Stay focused on space and CosmiDex's mission; gently redirect unrelated questions back "
-    "toward cosmic exploration."
-)
-
-FETCH_PLANET_TOOL: ToolParam = {
-    "name": "fetch_planet",
-    "description": (
-        "Look up precise, structured data for one confirmed exoplanet from CosmiDex's "
-        "own database — derived from NASA's Exoplanet Archive (PSCompPars) and enriched "
-        "with CosmiDex's own calculated habitability scoring. Use this whenever a user "
-        "asks about a specific named exoplanet's physical properties (radius, mass, "
-        "density, composition, size class), orbital characteristics (semi-major axis, "
-        "eccentricity, period, stability), host star data (spectral type, temperature, "
-        "age, distance from Earth), or habitability metrics (Earth Similarity Index, "
-        "habitable-zone membership and distance, habitability tier). This is CosmiDex's "
-        "authoritative, precomputed data for these planets — prefer it over general "
-        "knowledge or web search whenever the question is about a planet potentially "
-        "covered by this database, since values here are exact, sourced, and consistent "
-        "with the rest of the CosmiDex dataset, rather than approximate or aggregated "
-        "from varied external sources. Returns the planet's full physical, orbital, "
-        "stellar, and habitability data, plus an AI-generated image URL and description "
-        "where available."
-    ),
-    "input_schema": {
-        "type": "object",
-        "properties": {
-            "planet_name": {
-                "type": "string",
-                "description": (
-                    "The exoplanet's exact name as catalogued by NASA, e.g. "
-                    "'TRAPPIST-1 e', 'Kepler-442 b', 'Proxima Cen b'. Matching is an "
-                    "exact, case-sensitive string match against the stored name — "
-                    "not a fuzzy or partial search."
-                ),
-            }
-        },
-        "required": ["planet_name"],
-    },
-}
 
 
 class DecimalEncoder(json.JSONEncoder):
@@ -157,6 +99,21 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     yield
 
     logging.info("Database connection closing")
+
+
+def extract_text(content_blocks) -> str | None:
+    """Find the text of the first text-type block in an Anthropic response.
+
+    Args:
+        content_blocks: The `.content` list from an Anthropic Message response.
+
+    Returns:
+        str | None: The first text block's text, or None if there isn't one.
+    """
+    for block in content_blocks:
+        if block.type == "text":
+            return block.text
+    return None
 
 
 # ######################################
@@ -427,19 +384,86 @@ def get_planet(planet_name: str, db=Depends(get_db)):
 # ######################################
 
 
-def extract_text(content_blocks) -> str | None:
-    """Find the text of the first text-type block in an Anthropic response.
+client = anthropic.Anthropic()
 
-    Args:
-        content_blocks: The `.content` list from an Anthropic Message response.
 
-    Returns:
-        str | None: The first text block's text, or None if there isn't one.
-    """
-    for block in content_blocks:
-        if block.type == "text":
-            return block.text
-    return None
+class ChatRequest(BaseModel):
+    message: str
+
+
+# System prompt to tell Claude its role as Cosmo the chat assistant.
+SYSTEM_PROMPT = (
+    "You are Cosmo, CosmiDex's cosmic exploration assistant. CosmiDex is an interactive, "
+    "Pokédex-style web application for exploring cosmic entities throughout the universe. "
+    "Right now, only the exoplanet entity has been added, but datasets on galaxies, "
+    "constellations, and our solar system are planned. "
+    "Speak with vivid, enthusiastic curiosity about space — like a great science communicator like Neil deGrasse Tyson "
+    "sharing a cool fact with a friend — while staying scientifically accurate and grounded in "
+    "real data. Keep answers concise. "
+    "Use the fetch_planet tool whenever a user asks about a specific named exoplanet's real "
+    "physical, orbital, stellar, or habitability data — never guess or rely on general "
+    "knowledge for facts this tool can answer precisely. "
+    "Stay focused on space and CosmiDex's mission; gently redirect unrelated questions back "
+    "toward cosmic exploration."
+)
+
+FETCH_PLANET_TOOL: ToolParam = {
+    "name": "fetch_planet",
+    "description": (
+        "Look up precise, structured data for one confirmed exoplanet from CosmiDex's "
+        "own database — derived from NASA's Exoplanet Archive (PSCompPars) and enriched "
+        "with CosmiDex's own calculated habitability scoring. Use this whenever a user "
+        "asks about a specific named exoplanet's physical properties (radius, mass, "
+        "density, composition, size class), orbital characteristics (semi-major axis, "
+        "eccentricity, period, stability), host star data (spectral type, temperature, "
+        "age, distance from Earth), or habitability metrics (Earth Similarity Index, "
+        "habitable-zone membership and distance, habitability tier). This is CosmiDex's "
+        "authoritative, precomputed data for these planets — prefer it over general "
+        "knowledge or web search whenever the question is about a planet potentially "
+        "covered by this database, since values here are exact, sourced, and consistent "
+        "with the rest of the CosmiDex dataset, rather than approximate or aggregated "
+        "from varied external sources. Returns the planet's full physical, orbital, "
+        "stellar, and habitability data, plus an AI-generated image URL and description "
+        "where available."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "planet_name": {
+                "type": "string",
+                "description": (
+                    "The exoplanet's exact name as catalogued by NASA, e.g. "
+                    "'TRAPPIST-1 e', 'Kepler-442 b', 'Proxima Cen b'. Matching is an "
+                    "exact, case-sensitive string match against the stored name — "
+                    "not a fuzzy or partial search."
+                ),
+            }
+        },
+        "required": ["planet_name"],
+    },
+}
+
+SEARCH_ARTICLES_TOOL: ToolParam = {
+    "name": "search_articles",
+    "description": (
+        "Look up supplemental information in Cosmidex's article knowledge base regarding any cosmic entity. "
+        "These articles can be used to answer a general astronomy/space question — star types, the "
+        "habitable zone, how exoplanets are detected, and similar conceptual "
+        "topics. Use this when a user asks something explanatory or conceptual "
+        "that isn't about one specific planet's data (for planet-specific facts, "
+        "use fetch_planet instead)"
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "query": {
+                "type": "string",
+                "description": "The general astronomy/space related question posed by the user through the chat feature.",
+            }
+        },
+        "required": ["query"],
+    },
+}
 
 
 @app.post("/chat", dependencies=[Depends(require_api_key)])
@@ -457,7 +481,7 @@ def chat(request: ChatRequest):
         model="claude-sonnet-5",
         max_tokens=1024,
         system=SYSTEM_PROMPT,
-        tools=[FETCH_PLANET_TOOL],
+        tools=[FETCH_PLANET_TOOL, SEARCH_ARTICLES_TOOL],
         messages=[{"role": "user", "content": request.message}],
     )
 
@@ -468,11 +492,26 @@ def chat(request: ChatRequest):
         if element.type != "tool_use":
             continue
 
-        try:
-            result = fetch_planet(planet_name=str(element.input["planet_name"]))
-            result_text = str(result)
-        except ValueError:
-            result_text = "Hmm... I didn't find the planet you are looking for, can you double check the spelling?"
+        if element.name == "fetch_planet":
+            try:
+                result = fetch_planet(planet_name=str(element.input["planet_name"]))
+                result_text = str(result)
+            except ValueError:
+                result_text = "Hmm... I didn't find the planet you are looking for, can you double check the spelling?"
+        elif element.name == "search_articles":
+            try:
+                result = search_articles(query=str(element.input["query"]))
+                if not result:
+                    result_text = "I wasn't able to find any supporting articles related to your question, can you clarify or ask different question?"
+                else:
+                    result_text = "\n\n".join(
+                        f"{chunk['chunk_text']} (Source: {chunk['source_title']})"
+                        for chunk in result
+                    )
+            except ValueError:
+                result_text = "I wasn't able to find any supporting articles related to your question, can you clarify or ask different question?"
+        else:
+            result_text = "I don't recognize that tool."
 
         follow_up_messages = [
             {"role": "user", "content": request.message},
@@ -493,7 +532,7 @@ def chat(request: ChatRequest):
             model="claude-sonnet-5",
             max_tokens=1024,
             system=SYSTEM_PROMPT,
-            tools=[FETCH_PLANET_TOOL],
+            tools=[FETCH_PLANET_TOOL, SEARCH_ARTICLES_TOOL],
             messages=follow_up_messages,
         )
 

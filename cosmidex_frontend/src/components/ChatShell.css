@@ -26,8 +26,8 @@
 }
 
 .chat-panel {
-  width: 320px;
-  max-height: 420px;
+  width: 500px;
+  max-height: 500px;
   display: flex;
   flex-direction: column;
   background: #12121a;

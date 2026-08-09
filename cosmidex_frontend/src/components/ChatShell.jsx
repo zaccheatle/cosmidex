@@ -34,7 +34,7 @@ function ChatShell() {
           <div className="chat-header">🌌 Ask Cosmo</div>
           <div className="chat-messages">
               <div className="chat-message chat-message-assistant">
-                  🌌 Hi, I'm Cosmo! Ask me about any exoplanet!
+                  🌌 Hi, I'm Cosmo! Ask me anything about cosmic entities!
               </div>
               {messages.map((message, index) => (
                   <div key={index} className={`chat-message chat-message-${message.role}`}>
