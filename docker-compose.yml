@@ -1,7 +1,7 @@
 services:
   # service for postgres database
   db:
-    image: postgres
+    image: pgvector/pgvector:pg18
     restart: always
     ports: 
       - "5433:5432"

@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { apiFetch } from '../api'
 import './ChatShell.css'
 
 /**
- * Placeholder chat UI (the "Cosmo" assistant) — not wired to a backend yet.
- * Prep for the M7 MCP/RAG chat layer; input and send are disabled until then.
+ * Chat UI for "Cosmo," CosmiDex's chatbot assistant — wired to the /chat
+ * endpoint's Claude tool-use loop.
  *
  * @returns The floating chat toggle button and its expandable panel.
  */
@@ -13,6 +13,11 @@ function ChatShell() {
   const [draft, setDraft] = useState('')
   const [messages, setMessages] = useState([])
   const [loading, setLoading] = useState(false)
+  const messagesEndRef = useRef(null)
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, loading])
 
   return (
     <div className="chat-shell">
@@ -41,6 +46,7 @@ function ChatShell() {
                   Pondering...
                 </div>
               )}
+              <div ref={messagesEndRef} />
           </div>
           <form
               className="chat-input-row"
