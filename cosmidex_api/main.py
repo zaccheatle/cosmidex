@@ -20,7 +20,7 @@ from fastapi.security import APIKeyHeader
 from pydantic import BaseModel
 
 from cosmidex_mcp.tools.articles import search_articles
-from cosmidex_mcp.tools.exoplanets import fetch_planet
+from cosmidex_mcp.tools.exoplanets import compare_planets, fetch_planet, find_planets
 
 load_dotenv()
 
@@ -114,6 +114,24 @@ def extract_text(content_blocks) -> str | None:
         if block.type == "text":
             return block.text
     return None
+
+
+def input_str(data: dict, key: str) -> str | None:
+    """Cast an optional tool-input value to str, preserving None if absent."""
+    value = data.get(key)
+    return str(value) if value is not None else None
+
+
+def input_float(data: dict, key: str) -> float | None:
+    """Cast an optional tool-input value to float, preserving None if absent."""
+    value = data.get(key)
+    return float(value) if value is not None else None
+
+
+def input_int(data: dict, key: str, default: int) -> int:
+    """Cast a tool-input value to int, falling back to default if absent."""
+    value = data.get(key)
+    return int(value) if value is not None else default
 
 
 # ######################################
@@ -407,6 +425,7 @@ SYSTEM_PROMPT = (
     "toward cosmic exploration."
 )
 
+# Exoplanet entity tools ---------------------------------------------------------------------------------
 FETCH_PLANET_TOOL: ToolParam = {
     "name": "fetch_planet",
     "description": (
@@ -443,6 +462,110 @@ FETCH_PLANET_TOOL: ToolParam = {
     },
 }
 
+SEARCH_PLANETS_TOOL: ToolParam = {
+    "name": "search_planets",
+    "description": (
+        "Search for exoplanets matching one or more criteria from CosmiDex's own "
+        "database — derived from NASA's Exoplanet Archive (PSCompPars) and enriched "
+        "with CosmiDex's own calculated habitability scoring. Use this whenever a "
+        "user asks for planets matching some criteria (e.g. 'Tier 1 planets around "
+        "a K-type star') rather than asking about one specific named planet — for a "
+        "single named planet, use fetch_planet instead. This is CosmiDex's "
+        "authoritative, precomputed data — prefer it over general knowledge or web "
+        "search whenever the question is about planets potentially covered by this "
+        "database, since values here are exact, sourced, and consistent with the "
+        "rest of the CosmiDex dataset, rather than approximate or aggregated from "
+        "varied external sources. Any filter left unset matches all planets on "
+        "that criterion."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "tier": {
+                "type": "string",
+                "description": "Exact habitability_tier to match, e.g. 'Tier 1'.",
+            },
+            "planet_type": {
+                "type": "string",
+                "description": "Exact planet_composition to match.",
+            },
+            "star_type": {
+                "type": "string",
+                "description": "Prefix match against star_spectral_type, e.g. 'Class K' matches all K-type subclasses.",
+            },
+            "min_esi": {
+                "type": "number",
+                "description": "Minimum Earth Similarity Index, inclusive.",
+            },
+            "max_esi": {
+                "type": "number",
+                "description": "Maximum Earth Similarity Index, inclusive.",
+            },
+            "discovery_year": {
+                "type": "string",
+                "description": "Exact discovery year to match, e.g. '2016'.",
+            },
+            "planet_size_class": {
+                "type": "string",
+                "description": "Exact planet_size_class to match, e.g. 'Super-Earth'.",
+            },
+            "min_distance": {
+                "type": "number",
+                "description": "Minimum host star distance from Earth, in light-years, inclusive.",
+            },
+            "max_distance": {
+                "type": "number",
+                "description": "Maximum host star distance from Earth, in light-years, inclusive.",
+            },
+            "limit": {
+                "type": "integer",
+                "description": "Max number of planets to return. Defaults to 20.",
+            },
+        },
+        "required": [],
+    },
+}
+
+COMPARE_PLANETS_TOOL: ToolParam = {
+    "name": "compare_planets",
+    "description": (
+        "Look up and return full data for two confirmed exoplanets side by side, "
+        "for direct comparison. Use this whenever a user asks how two specific "
+        "named exoplanets compare to each other, rather than asking about a single "
+        "planet (use fetch_planet) or a broader set of planets matching criteria "
+        "(use search_planets)"
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "planet_a": {
+                "type": "string",
+                "description": (
+                    "The exoplanet's exact name as catalogued by NASA, e.g. "
+                    "'TRAPPIST-1 e', 'Kepler-442 b', 'Proxima Cen b'. Matching is an "
+                    "exact, case-sensitive string match against the stored name — "
+                    "not a fuzzy or partial search."
+                ),
+            },
+            "planet_b": {
+                "type": "string",
+                "description": (
+                    "The exoplanet's exact name as catalogued by NASA, e.g. "
+                    "'TRAPPIST-1 e', 'Kepler-442 b', 'Proxima Cen b'. Matching is an "
+                    "exact, case-sensitive string match against the stored name — "
+                    "not a fuzzy or partial search."
+                ),
+            },
+        },
+        "required": ["planet_a", "planet_b"],
+    },
+}
+
+# Universe entity tools ----------------------------------------------------------------------------------
+# Galaxy entity tools ------------------------------------------------------------------------------------
+# Solar system entity tools ------------------------------------------------------------------------------
+
+# Astronomy and Space related articles for RAG -----------------------------------------------------
 SEARCH_ARTICLES_TOOL: ToolParam = {
     "name": "search_articles",
     "description": (
@@ -468,7 +591,7 @@ SEARCH_ARTICLES_TOOL: ToolParam = {
 
 @app.post("/chat", dependencies=[Depends(require_api_key)])
 def chat(request: ChatRequest):
-    """Answer a user's chat message, calling `fetch_planet` if Claude decides
+    """Answer a user's chat message, calling mcp tools if Claude decides
     it needs CosmiDex data to respond.
 
     Args:
@@ -481,7 +604,12 @@ def chat(request: ChatRequest):
         model="claude-sonnet-5",
         max_tokens=1024,
         system=SYSTEM_PROMPT,
-        tools=[FETCH_PLANET_TOOL, SEARCH_ARTICLES_TOOL],
+        tools=[
+            FETCH_PLANET_TOOL,
+            SEARCH_PLANETS_TOOL,
+            COMPARE_PLANETS_TOOL,
+            SEARCH_ARTICLES_TOOL,
+        ],
         messages=[{"role": "user", "content": request.message}],
     )
 
@@ -498,6 +626,35 @@ def chat(request: ChatRequest):
                 result_text = str(result)
             except ValueError:
                 result_text = "Hmm... I didn't find the planet you are looking for, can you double check the spelling?"
+
+        elif element.name == "search_planets":
+            result = find_planets(
+                tier=input_str(element.input, "tier"),
+                planet_type=input_str(element.input, "planet_type"),
+                star_type=input_str(element.input, "star_type"),
+                min_esi=input_float(element.input, "min_esi"),
+                max_esi=input_float(element.input, "max_esi"),
+                discovery_year=input_str(element.input, "discovery_year"),
+                planet_size_class=input_str(element.input, "planet_size_class"),
+                min_distance=input_float(element.input, "min_distance"),
+                max_distance=input_float(element.input, "max_distance"),
+                limit=input_int(element.input, "limit", 20),
+            )
+            if not result:
+                result_text = "I wasn't able to find any planets matching your criteria, can you double check and modify your search criteria?"
+            else:
+                result_text = str(result)
+
+        elif element.name == "compare_planets":
+            try:
+                result = compare_planets(
+                    planet_a=str(element.input["planet_a"]),
+                    planet_b=str(element.input["planet_b"]),
+                )
+                result_text = str(result)
+            except ValueError:
+                result_text = "Hmm... I didn't find the planets you want to compare, can you double check you spelled their names correctly?"
+
         elif element.name == "search_articles":
             try:
                 result = search_articles(query=str(element.input["query"]))
@@ -532,7 +689,12 @@ def chat(request: ChatRequest):
             model="claude-sonnet-5",
             max_tokens=1024,
             system=SYSTEM_PROMPT,
-            tools=[FETCH_PLANET_TOOL, SEARCH_ARTICLES_TOOL],
+            tools=[
+                FETCH_PLANET_TOOL,
+                SEARCH_PLANETS_TOOL,
+                COMPARE_PLANETS_TOOL,
+                SEARCH_ARTICLES_TOOL,
+            ],
             messages=follow_up_messages,
         )
 
