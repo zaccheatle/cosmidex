@@ -230,12 +230,17 @@ function App() {
                       <Tooltip text={<><span className="tooltip-highlight">{currentPlanet.planet_name}</span> (right) rendered next to Earth (left), scaled to the real measured radius ratio between the two. {(() => {
                         const r = currentPlanet.planet_radius_earth
                         if (r == null) return null
-                        const pct = (r * 100).toFixed(0)
+                        const pctDiff = Math.abs((r - 1) * 100).toFixed(0)
+                        const sizeText = pctDiff < 1
+                          ? "about the same size as Earth"
+                          : r > 1
+                            ? `${pctDiff}% larger than Earth`
+                            : `${pctDiff}% smaller than Earth`
                         const volumeRatio = r ** 3
                         const fitText = volumeRatio >= 1
                           ? `you could fit ~${volumeRatio.toFixed(1)} Earths inside it`
                           : `it would fit inside Earth ~${(1 / volumeRatio).toFixed(1)}x over`
-                        return `Its radius is ${pct}% of Earth's — ${fitText}.`
+                        return `It's ${sizeText} — ${fitText}.`
                       })()}</>} />
                     )}
                   </p>
@@ -278,17 +283,41 @@ function App() {
                           : <span>{currentPlanet.planet_composition}</span></p>
                         <p>Earth Similarity Index<Tooltip text="ESI measures how physically similar this planet is to Earth. Combines radius, density, escape velocity and surface temperature. 1.0 = identical to Earth, 0 = completely alien." />
                           : <span>{currentPlanet.esi_score != null ? currentPlanet.esi_score.toFixed(3) : 'Unknown'}</span></p>
-                        <p>Escape Velocity<Tooltip text="The minimum speed needed to escape this planet's gravitational pull without further propulsion. Earth's escape velocity is 11.2 km/s." />
+                        <p>Escape Velocity<Tooltip text={<>The minimum speed needed to escape this planet's gravitational pull without further propulsion. Earth's escape velocity is 11.2 km/s. {(() => {
+                              const v = planetEscapeVelocityKms(currentPlanet.planet_mass_earth, currentPlanet.planet_radius_earth)
+                              if (v == null) return null
+                              const pctDiff = Math.abs(((v - 11.2) / 11.2) * 100).toFixed(0)
+                              if (pctDiff < 1) return "About the same as Earth's."
+                              return v > 11.2
+                                ? `That's ${pctDiff}% faster than Earth's escape velocity.`
+                                : `That's ${pctDiff}% slower than Earth's escape velocity.`
+                            })()}</>} />
                           : <span>{(() => {
                               const v = planetEscapeVelocityKms(currentPlanet.planet_mass_earth, currentPlanet.planet_radius_earth)
                               return v != null ? `${v.toFixed(1)} km/s` : 'Unknown'
                             })()}</span></p>
-                        <p>Gravity<Tooltip text="Surface gravity. Calculated from the planet's mass and radius. Affects whether humans could walk on the surface and whether the planet can hold an atmosphere." />
+                        <p>Gravity<Tooltip text={<>Surface gravity. Calculated from the planet's mass and radius. Affects whether humans could walk on the surface and whether the planet can hold an atmosphere. Earth's surface gravity is 9.81 m/s². {(() => {
+                              const g = planetGravityMs2(currentPlanet.planet_mass_earth, currentPlanet.planet_radius_earth)
+                              if (g == null) return null
+                              const pctDiff = Math.abs(((g - 9.81) / 9.81) * 100).toFixed(0)
+                              if (pctDiff < 1) return "You'd feel about the same as on Earth."
+                              return g > 9.81
+                                ? `You'd feel ${pctDiff}% heavier than on Earth.`
+                                : `You'd feel ${pctDiff}% lighter than on Earth.`
+                            })()}</>} />
                           : <span>{(() => {
                               const g = planetGravityMs2(currentPlanet.planet_mass_earth, currentPlanet.planet_radius_earth)
                               return g != null ? `${g.toFixed(2)} m/s²` : 'Unknown'
                             })()}</span></p>
-                        <p>Radius<Tooltip text="Planet radius. Earth's radius is 6,371 km." />
+                        <p>Radius<Tooltip text={<>Planet radius. Earth's radius is 6,371 km. {(() => {
+                              const r = currentPlanet.planet_radius_earth
+                              if (r == null) return null
+                              const pctDiff = Math.abs((r - 1) * 100).toFixed(0)
+                              if (pctDiff < 1) return "About the same size as Earth."
+                              return r > 1
+                                ? `That's ${pctDiff}% larger than Earth.`
+                                : `That's ${pctDiff}% smaller than Earth.`
+                            })()}</>} />
                           : <span>{currentPlanet.planet_radius_earth != null ? `${Math.round(currentPlanet.planet_radius_earth * 6371).toLocaleString()} km` : 'Unknown'}</span></p>
                         <p>Size Class<Tooltip text="Size classification based on planet radius compared to solar system bodies. Super Earths are the most common planet type in the galaxy yet our solar system has none — we don't fully understand why." />
                           : <span>{currentPlanet.planet_size_class}</span></p>
