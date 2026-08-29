@@ -27,17 +27,22 @@ export default function LandingPage({ onEnter, onShowAbout }) {
 
         <div className="landing-stats">
           <div className="landing-stat">
-            <span className="landing-stat-value">6,324</span>
-            <span className="landing-stat-label">Confirmed Exoplanets</span>
+            <span className="landing-stat-value">13.8 Billion</span>
+            <span className="landing-stat-label">Years Old</span>
+          </div>
+          <div className="landing-stat">
+            <span className="landing-stat-value">~ 2 Trillion</span>
+            <span className="landing-stat-label">Galaxies</span>
+          </div>
+          <div className="landing-stat">
+            <span className="landing-stat-value">68%</span>
+            <span className="landing-stat-label">Dark Matter</span>
           </div>
         </div>
 
         <div className="landing-actions">
           <button className="landing-enter-btn" title="Enter the planet explorer" onClick={onEnter}>
             Explore the Codex→
-          </button>
-          <button className="landing-about-btn" title="About the project and its author" onClick={onShowAbout}>
-            About
           </button>
         </div>
       </div>

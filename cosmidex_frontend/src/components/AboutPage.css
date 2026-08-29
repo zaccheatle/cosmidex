@@ -39,6 +39,54 @@
   margin-bottom: 0.5rem;
 }
 
+.about-toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.75rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #2e2e4e;
+}
+
+.about-toc-btn {
+  background: #1e1e2e;
+  color: #8888aa;
+  border: 1px solid #2e2e4e;
+  padding: 0.35rem 0.9rem;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+}
+
+.about-toc-btn:hover:not(.active) {
+  background: #2e2e4e;
+  color: #ffffff;
+}
+
+.about-toc-btn.active {
+  background: #4a9eff;
+  color: #ffffff;
+  border-color: #4a9eff;
+}
+
+.about-panel h3 {
+  color: #4a9eff;
+  text-shadow: 0 0 8px rgba(191, 95, 255, 0.6);
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.5rem;
+}
+
+.about-panel h4 {
+  color: #8888aa;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.4rem;
+}
+
 .about-panel section {
   margin-bottom: 1.75rem;
 }

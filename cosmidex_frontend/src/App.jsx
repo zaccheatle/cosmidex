@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from 'react'
 import Tooltip from './components/Tooltip'
 import ChatShell from './components/ChatShell'
 import OrbitScale from './components/OrbitScale'
-import MethodologyPage from './components/MethodologyPage'
 import LandingPage from './components/LandingPage'
 import EntityOverview from './components/EntityOverview'
 import AboutPage from './components/AboutPage'
@@ -74,7 +73,6 @@ function App() {
   const [detailError, setDetailError] = useState(null)
 
   const [showAbout, setShowAbout] = useState(false)
-  const [showMethodology, setShowMethodology] = useState(false)
   const [showLanding, setShowLanding] = useState(true)
 
   // Fetch every potentially habitable planet (Tier 1/2/3) once on mount
@@ -143,7 +141,6 @@ function App() {
           onEnter={() => setShowLanding(false)}
           onShowAbout={() => setShowAbout(true)}
         />
-        {showMethodology && <MethodologyPage onClose={() => setShowMethodology(false)} />}
         {showAbout && <AboutPage onClose={() => setShowAbout(false)} />}
       </>
     )
@@ -159,8 +156,8 @@ function App() {
             <button className="methodology-link" title="Return to the Cosmidex home page" onClick={() => { setShowLanding(true); setAtEntityIntro(true) }}>
               Launch Pad
             </button>
-            <button className="methodology-link" title="The methodology and data sources powering this project" onClick={() => setShowMethodology(true)}>
-              Methodology &amp; Sources
+            <button className="methodology-link" title="About the project and its author" onClick={() => setShowAbout(true)}>
+              About
             </button>
           </div>
         </div>
@@ -432,7 +429,7 @@ function App() {
 
       <ChatShell />
 
-      {showMethodology && <MethodologyPage onClose={() => setShowMethodology(false)} />}
+      {showAbout && <AboutPage onClose={() => setShowAbout(false)} />}
 
     </div>
   )

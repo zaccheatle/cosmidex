@@ -52,21 +52,21 @@
   letter-spacing: 0.2em;
   font-size: 0.9rem;
   font-weight: 700;
-  margin-bottom: 2rem;
+  margin-bottom: 2.0rem;
 }
 
 .landing-intro {
   color: #cccccc;
   line-height: 1.7;
   font-size: 1.05rem;
-  margin-bottom: 2.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .landing-stats {
   display: flex;
   justify-content: center;
   gap: 2.5rem;
-  margin-bottom: 2.5rem;
+  margin-bottom: 2.0rem;
   flex-wrap: wrap;
 }
 
@@ -116,6 +116,7 @@
   box-shadow: 0 0 24px rgba(74, 158, 255, 0.6);
 }
 
+/*
 .landing-about-btn {
   background: transparent;
   border: 1px solid #ffffff;
@@ -131,3 +132,4 @@
   background: #1e1e2e;
   color: #ffffff;
 }
+*/
