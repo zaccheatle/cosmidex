@@ -127,7 +127,7 @@ export default function OrbitScale({
   return (
     <div className="orbit-scale">
       <p className="orbit-scale-subtitle">
-        <span className="orbit-scale-legend-swatch" /> Conservative habitable zone of host star
+        <span className="orbit-scale-legend-swatch" /> Host star Goldilocks zone
       </p>
       <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="orbit-scale-svg" preserveAspectRatio="xMidYMid meet">
         {hasHz && (

@@ -71,7 +71,7 @@
 }
 
 .about-panel h3 {
-  color: #4a9eff;
+  color: #bf5fff;
   text-shadow: 0 0 8px rgba(191, 95, 255, 0.6);
   font-size: 0.95rem;
   text-transform: uppercase;
@@ -80,7 +80,8 @@
 }
 
 .about-panel h4 {
-  color: #8888aa;
+  color: #e4e3e0;
+  text-shadow: 0 0 8px rgba(198, 200, 204, 0.6);
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;

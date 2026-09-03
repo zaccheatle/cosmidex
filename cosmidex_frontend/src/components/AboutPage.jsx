@@ -9,11 +9,11 @@ const PAGES = [
       <>
         <section>
           <h2>Author</h2>
-          <h3>Zac Cheatle</h3>
+          <h4>Zac Cheatle</h4>
           <p>
             {' '}
             <a href="https://github.com/zaccheatle/cosmidex" target="_blank" rel="noreferrer">
-              Cosmidex Github Repository
+            Github Repository
             </a>{' '} |
             {' '}
             <a href="https://www.linkedin.com/in/zaccheatle/" target="_blank" rel="noreferrer">
@@ -25,7 +25,7 @@ const PAGES = [
         <section>
           <h2>Project Background</h2>
           <p>
-            CosmiDex is a codex for the cosmos — a personal passion project that turns real astronomical data into
+            CosmiDex is a personal passion project that turns real astronomical data into
             something you can actually explore. It's a
             cross between 10-year-old Zac's love for Pokémon and adult Zac's
             love for space, where each cosmic
