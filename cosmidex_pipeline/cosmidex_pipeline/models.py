@@ -24,6 +24,13 @@ class ExoplanetRecord:
     hostname: str = field(metadata={"pk": True})
 
 
+@dataclass
+class GalaxyRecord:
+    """Primary-key schema for a raw OpenNGC galaxy record."""
+
+    name: str = field(metadata={"pk": True})
+
+
 # Bind typevar to DataClassInstance so pylance knows the input is guaranteed to be a valid dataclass
 T = TypeVar("T", bound=Any)
 

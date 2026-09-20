@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
 
 from cosmidex_pipeline.models import ExoplanetRecord, validate_records
+from cosmidex_pipeline.utils import get_engine
 from src.db_loader import load_db
 from src.exoplanet_extractor import build_query
 
@@ -27,20 +28,7 @@ logging.basicConfig(
 PIPELINE_NAME = "nasa_exoplanets"
 
 
-def _get_engine() -> sqlalchemy.engine.Engine:
-    """Build a SQLAlchemy engine for the Postgres instance from env vars.
-
-    Returns:
-        sqlalchemy.engine.Engine: Engine connected to the configured Postgres database.
-    """
-    conn_string = (
-        f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}"
-        f"@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
-    )
-    return sqlalchemy.create_engine(conn_string)
-
-
-@asset
+@asset(group_name="exoplanets")
 def raw_nasa_data() -> pd.DataFrame:
     """Extract raw exoplanet data from NASA TAP service.
 
@@ -52,7 +40,7 @@ def raw_nasa_data() -> pd.DataFrame:
     """
 
     nasa_url = os.environ.get("NASA_URL")
-    print(f"Debug nasa_url: {nasa_url}")
+    logging.debug(f"Debug nasa_url: {nasa_url}")
 
     df = build_query(
         base_url=nasa_url,
@@ -66,7 +54,7 @@ def raw_nasa_data() -> pd.DataFrame:
     return df
 
 
-@asset
+@asset(group_name="exoplanets")
 def validated_nasa_dict(raw_nasa_data: pd.DataFrame) -> pd.DataFrame:
     """Validate raw NASA data against ExoplanetRecord dataclass schema.
 
@@ -91,7 +79,7 @@ def validated_nasa_dict(raw_nasa_data: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-@asset
+@asset(group_name="exoplanets")
 def hash_dataframe(validated_nasa_dict: pd.DataFrame) -> str:
     """Hash a DataFrame to detect changes between runs.
 
@@ -107,7 +95,7 @@ def hash_dataframe(validated_nasa_dict: pd.DataFrame) -> str:
     return hashlib.md5(hash_values.tobytes()).hexdigest()
 
 
-@asset
+@asset(group_name="exoplanets")
 def check_file_hash(validated_nasa_dict: pd.DataFrame, hash_dataframe: str) -> dict:
     """Check if NASA data has changed since the last pipeline run and detect new planets.
 
@@ -119,12 +107,12 @@ def check_file_hash(validated_nasa_dict: pd.DataFrame, hash_dataframe: str) -> d
         dict: {
             "changed" (bool): whether the data differs from the last recorded run,
             "current_hash" (str): hash of the current run,
-            "new_planets" (list[str]): pl_name values not present in raw.exoplanets yet,
-            "planet_count" (int): row count of the current run,
+            "new_records" (list[str]): pl_name values not present in raw.exoplanets yet,
+            "record_count" (int): row count of the current run,
         }
     """
 
-    engine = _get_engine()
+    engine = get_engine()
 
     with engine.connect() as conn:
         row = conn.execute(
@@ -136,7 +124,7 @@ def check_file_hash(validated_nasa_dict: pd.DataFrame, hash_dataframe: str) -> d
         previous_hash = row[0] if row else None
         changed = previous_hash != hash_dataframe
 
-        new_planets: list[str] = []
+        new_records: list[str] = []
         if changed:
             exoplanets_table_exists = conn.execute(
                 sqlalchemy.text("SELECT to_regclass('raw.exoplanets')")
@@ -149,26 +137,28 @@ def check_file_hash(validated_nasa_dict: pd.DataFrame, hash_dataframe: str) -> d
                         sqlalchemy.text("SELECT DISTINCT pl_name FROM raw.exoplanets")
                     )
                 }
-                new_planets = sorted(
+                new_records = sorted(
                     set(validated_nasa_dict["pl_name"]) - previous_names
                 )
 
     if changed:
         logging.info(
-            f"NASA data changed since last run — {len(new_planets)} new planet(s) detected."
+            f"NASA data changed since last run — {len(new_records)} new planet(s) detected."
         )
     else:
-        logging.info("NASA data unchanged since last run — downstream load can be skipped.")
+        logging.info(
+            "NASA data unchanged since last run — downstream load can be skipped."
+        )
 
     return {
         "changed": changed,
         "current_hash": hash_dataframe,
-        "new_planets": new_planets,
-        "planet_count": len(validated_nasa_dict),
+        "new_records": new_records,
+        "record_count": len(validated_nasa_dict),
     }
 
 
-@asset
+@asset(group_name="exoplanets")
 def load_bronze(validated_nasa_dict: pd.DataFrame, check_file_hash: dict) -> dict:
     """Full-reload validated NASA data into raw.exoplanets and record the run in raw.pipeline_state.
 
@@ -186,7 +176,7 @@ def load_bronze(validated_nasa_dict: pd.DataFrame, check_file_hash: dict) -> dic
         logging.info("Skipping Bronze load — NASA data unchanged since last run.")
         return {**check_file_hash, "loaded": False}
 
-    engine = _get_engine()
+    engine = get_engine()
 
     with engine.begin() as conn:
         conn.execute(sqlalchemy.text("DROP TABLE IF EXISTS raw.exoplanets CASCADE"))
@@ -201,63 +191,63 @@ def load_bronze(validated_nasa_dict: pd.DataFrame, check_file_hash: dict) -> dic
             sqlalchemy.text(
                 """
                 INSERT INTO raw.pipeline_state
-                    (pipeline_name, last_file_hash, last_run_timestamp, last_planet_count)
+                    (pipeline_name, last_file_hash, last_run_timestamp, last_record_count)
                 VALUES (:name, :hash, now(), :count)
                 ON CONFLICT (pipeline_name) DO UPDATE SET
                     last_file_hash = EXCLUDED.last_file_hash,
                     last_run_timestamp = EXCLUDED.last_run_timestamp,
-                    last_planet_count = EXCLUDED.last_planet_count
+                    last_record_count = EXCLUDED.last_record_count
                 """
             ),
             {
                 "name": PIPELINE_NAME,
                 "hash": check_file_hash["current_hash"],
-                "count": check_file_hash["planet_count"],
+                "count": check_file_hash["record_count"],
             },
         )
 
-    if check_file_hash["new_planets"]:
-        logging.info(f"New planets detected: {check_file_hash['new_planets']}")
+    if check_file_hash["new_records"]:
+        logging.info(f"New planets detected: {check_file_hash['new_records']}")
 
-    logging.info(f"Loaded {check_file_hash['planet_count']} rows to raw.exoplanets.")
+    logging.info(f"Loaded {check_file_hash['record_count']} rows to raw.exoplanets.")
 
     return {**check_file_hash, "loaded": True}
 
 
-@asset
+@asset(group_name="exoplanets")
 def audit_log(load_bronze: dict) -> None:
     """Write run metadata for this pipeline execution to raw.pipeline_audit.
 
     Args:
-        load_bronze (dict): Output of load_bronze (changed/current_hash/new_planets/planet_count/loaded).
+        load_bronze (dict): Output of load_bronze (changed/current_hash/new_records/record_count/loaded).
 
     Returns:
         None.
     """
 
-    engine = _get_engine()
+    engine = get_engine()
 
     with engine.begin() as conn:
         conn.execute(
             sqlalchemy.text(
                 """
                 INSERT INTO raw.pipeline_audit
-                    (pipeline_name, changed, loaded, planet_count, new_planet_count, new_planets)
-                VALUES (:name, :changed, :loaded, :planet_count, :new_planet_count, :new_planets)
+                    (pipeline_name, changed, loaded, record_count, new_record_count, new_records)
+                VALUES (:name, :changed, :loaded, :record_count, :new_record_count, :new_records)
                 """
             ),
             {
                 "name": PIPELINE_NAME,
                 "changed": load_bronze["changed"],
                 "loaded": load_bronze["loaded"],
-                "planet_count": load_bronze["planet_count"],
-                "new_planet_count": len(load_bronze["new_planets"]),
-                "new_planets": load_bronze["new_planets"],
+                "record_count": load_bronze["record_count"],
+                "new_record_count": len(load_bronze["new_records"]),
+                "new_records": load_bronze["new_records"],
             },
         )
 
     logging.info(
         f"Audit log written — changed: {load_bronze['changed']}, "
-        f"loaded: {load_bronze['loaded']}, planet_count: {load_bronze['planet_count']}, "
-        f"new_planets: {len(load_bronze['new_planets'])}."
+        f"loaded: {load_bronze['loaded']}, record_count: {load_bronze['record_count']}, "
+        f"new_records: {len(load_bronze['new_records'])}."
     )

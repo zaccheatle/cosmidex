@@ -18,25 +18,29 @@ export default function LandingPage({ onEnter, onShowAbout }) {
       <div className="landing-starfield" />
 
       <div className="landing-content"> 
-        <h1 className="landing-title">🌌Cosmidex</h1>
+        <h1 className="landing-title"><img src="/galaxy-logo.png" alt="" className="landing-logo" />Cosmidex</h1>
         <p className="landing-tagline">A Codex for the Cosmos</p>
 
         <p className="landing-intro">
-          An interactive, Pokédex like explorer of cosmic entities across the universe.
+          An interactive explorer of cosmic entities across the universe.
         </p>
 
         <div className="landing-stats">
           <div className="landing-stat">
-            <span className="landing-stat-value">13.8 Billion</span>
+            <span className="landing-stat-value">13.8B</span>
             <span className="landing-stat-label">Years Old</span>
           </div>
           <div className="landing-stat">
             <span className="landing-stat-value">~ 2 Trillion</span>
             <span className="landing-stat-label">Galaxies</span>
           </div>
+            <div className="landing-stat">
+            <span className="landing-stat-value">~ 1 Septillion</span>
+            <span className="landing-stat-label">Stars</span>
+          </div>
           <div className="landing-stat">
-            <span className="landing-stat-value">68%</span>
-            <span className="landing-stat-label">Dark Matter</span>
+            <span className="landing-stat-value">6,324</span>
+            <span className="landing-stat-label">Confirmed Exoplanets</span>
           </div>
         </div>
 

@@ -32,7 +32,7 @@
 .landing-content {
   position: relative;
   z-index: 1;
-  max-width: 640px;
+  max-width: 680px;
   width: 100%;
   text-align: center;
 }
@@ -43,6 +43,15 @@
   text-shadow: 0 0 16px rgba(74, 158, 255, 0.7);
   letter-spacing: 0.1em;
   margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25em;
+}
+
+.landing-logo {
+  height: 1em;
+  width: auto;
 }
 
 .landing-tagline {

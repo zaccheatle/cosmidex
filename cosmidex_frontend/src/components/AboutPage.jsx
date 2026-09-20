@@ -29,7 +29,7 @@ const PAGES = [
             something you can actually explore. It's a
             cross between 10-year-old Zac's love for Pokémon and adult Zac's
             love for space, where each cosmic
-            entity gets its own Pokedex-style catalog entry for the user to explore at their own pace.
+            entity gets its own Pokedex-style catalog entry for the user to explore.
           </p>
         </section>
       </>
@@ -41,23 +41,11 @@ const PAGES = [
     content: (
       <section>
         <p>
-          Cosmidex is a full-stack ELT data engineering project. Data ingestion is orchestrated
-          via Dagster → Postgres → layered dbt transforms (Bronze →
-          Silver → Gold) → FastAPI → React. Cosmo, the in-app chat
-          assistant, runs on Claude's tool-use API against a standalone MCP
-          server exposing structured query tools (lookup, search, compare)
-          for each cosmic entity, plus a pgvector RAG layer over reference
-          articles for conceptual questions. The MCP server also runs
-          standalone, so any MCP-compatible client can query the catalog directly.
-          Cosmidex is deployed via AWS: Postgres and the API share a single
-          EC2 instance — the API deploys as a Docker container via ECS,
-          Postgres runs as a plain Docker container alongside it — generated
-          artwork sits in S3 behind CloudFront, and the
-          pipeline's scheduling lives in Dagster Cloud. As a self-funded solo project, 
+          Cosmidex is a full-stack data engineering project. As a self-funded solo project, 
           Cosmidex doesn't need a fully-managed, private setup — 
           but I still tried to follow production best practices where it made sense:
           Github repo & project board with milestones/issues, Terraform for IaC, 
-          Docker for containerized deployment, and CI/CD via GitHub Actions and AWS Codepipeline.
+          Docker for containerized deployment, and CI/CD via GitHub Actions.
         </p>
       </section>
     ),
@@ -96,7 +84,7 @@ const PAGES = [
       </section>
     ),
   },
-  {
+  /*{
     navTitle: 'Methodology: Galaxies',
     title: 'Methodology — Galaxies',
     content: (
@@ -113,7 +101,7 @@ const PAGES = [
         <p></p>
       </section>
     ),
-  },
+  },*/
   {
     navTitle: 'Methodology: Exoplanets',
     title: 'Methodology — Exoplanets',
@@ -200,7 +188,7 @@ const PAGES = [
       </section>
     ),
   },
-  {
+  /*{
     navTitle: 'Methodology: Solar System',
     title: 'Methodology — The Solar System',
     content: (
@@ -217,7 +205,7 @@ const PAGES = [
         <p></p>
       </section>
     ),
-  },
+  },*/
   {
     navTitle: 'Roadmap',
     title: 'Roadmap',
@@ -225,6 +213,8 @@ const PAGES = [
       <section>
         <h3>Upcoming Cosmic Entities</h3>
         <ul>
+          <li><strong>Galaxies</strong> — the galaxies in our universe.</li>
+          <li><strong>The Solar System</strong> — the planets and moons in our solar system.</li>
           <li><strong>Black Holes</strong> — a curated set of well-measured black holes, e.g. Sagittarius A* and M87*.</li>
           <li><strong>Nebulae</strong> — cataloged nebulae with type, distance, size, and composition.</li>
           <li><strong>Comets &amp; Asteroids</strong> — sourced from NASA JPL's Small-Body Database, the same kind of real structured catalog exoplanets already use.</li>

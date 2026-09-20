@@ -8,8 +8,12 @@ import AboutPage from './components/AboutPage'
 import { apiFetch } from './api'
 import './App.css'
 
-// Constellations and Our Solar System will be added here once those datasets exist.
+// Galaxies and Our Solar System will be added here once those datasets exist.
 const ENTITY_OPTIONS = ['Exoplanets']
+
+const ENTITY_TOOLTIPS = {
+  Exoplanets: 'NASA confirmed planets in the Milky Way that orbit a star other than our Sun.',
+}
 
 const TIER_OPTIONS = ['All', 'Tier 1', 'Tier 2', 'Tier 3']
 
@@ -48,6 +52,46 @@ function planetGravityMs2(massEarth, radiusEarth) {
 function planetEscapeVelocityKms(massEarth, radiusEarth) {
   if (massEarth == null || radiusEarth == null || radiusEarth <= 0) return null
   return Math.sqrt(massEarth / radiusEarth) * 11.2
+}
+
+/**
+ * Previous/Next paging footer shared by every entity's card view — Overview
+ * sits at index -1 (represented by atEntityIntro), individual entries at
+ * 0..length-1. Entity-specific bounds (length) and index state are supplied
+ * by the caller so this component stays entity-agnostic.
+ *
+ * @param props
+ * @param props.atEntityIntro - Whether the overview slide is currently shown.
+ * @param props.setAtEntityIntro - Setter for atEntityIntro.
+ * @param props.currentIndex - Index into the current entity's entry list.
+ * @param props.setCurrentIndex - Setter for currentIndex.
+ * @param props.length - Number of entries in the current entity's list.
+ * @returns The Previous/Next navigation footer.
+ */
+function NavigationFooter({ atEntityIntro, setAtEntityIntro, currentIndex, setCurrentIndex, length }) {
+  return (
+    <footer className="navigation">
+      <button
+        onClick={() => {
+          if (currentIndex === 0) setAtEntityIntro(true)
+          else setCurrentIndex(i => i - 1)
+        }}
+        disabled={atEntityIntro}
+      >
+        ← Previous
+      </button>
+      <span>{atEntityIntro ? 'Overview' : `${currentIndex + 1} / ${length}`}</span>
+      <button
+        onClick={() => {
+          if (atEntityIntro) setAtEntityIntro(false)
+          else setCurrentIndex(i => i + 1)
+        }}
+        disabled={!atEntityIntro && currentIndex === length - 1}
+      >
+        Next →
+      </button>
+    </footer>
+  )
 }
 
 /**
@@ -151,7 +195,7 @@ function App() {
 
       <div className="top-bar">
         <div className="top-left">
-          <h1>🌌 Cosmidex: A Codex for the Cosmos</h1>
+          <h1><img src="/galaxy-logo.png" alt="" className="header-logo" /> Cosmidex: A Codex for the Cosmos</h1>
           <div className="header-link-group">
             <button className="methodology-link" title="Return to the Cosmidex home page" onClick={() => { setShowLanding(true); setAtEntityIntro(true) }}>
               Launch Pad
@@ -168,10 +212,9 @@ function App() {
               {ENTITY_OPTIONS.map(entity => (
                 <button
                   key={entity}
-                  title={entity === 'Exoplanets' ? 'NASA confirmed planets in the Milky Way that orbit a star other than our Sun.' : 'Coming soon'}
+                  title={ENTITY_TOOLTIPS[entity] ?? 'Coming soon'}
                   className={`entity-btn ${selectedEntity === entity ? 'active' : ''}`}
-                  disabled={entity !== 'Exoplanets'}
-                  onClick={() => { setSelectedEntity(entity); setAtEntityIntro(true) }}
+                  onClick={() => { setSelectedEntity(entity); setAtEntityIntro(true); setCurrentIndex(0) }}
                 >
                   {entity}
                 </button>
@@ -198,6 +241,8 @@ function App() {
         </div>
       </div>
 
+      {selectedEntity === 'Exoplanets' && (
+      <>
       {listLoading && (
         <div className="state-message">Loading planets…</div>
       )}
@@ -403,28 +448,16 @@ function App() {
           </main>
           )}
 
-          <footer className="navigation">
-            <button
-              onClick={() => {
-                if (currentIndex === 0) setAtEntityIntro(true)
-                else setCurrentIndex(i => i - 1)
-              }}
-              disabled={atEntityIntro}
-            >
-              ← Previous
-            </button>
-            <span>{atEntityIntro ? 'Overview' : `${currentIndex + 1} / ${filteredPlanets.length}`}</span>
-            <button
-              onClick={() => {
-                if (atEntityIntro) setAtEntityIntro(false)
-                else setCurrentIndex(i => i + 1)
-              }}
-              disabled={!atEntityIntro && currentIndex === filteredPlanets.length - 1}
-            >
-              Next →
-            </button>
-          </footer>
+          <NavigationFooter
+            atEntityIntro={atEntityIntro}
+            setAtEntityIntro={setAtEntityIntro}
+            currentIndex={currentIndex}
+            setCurrentIndex={setCurrentIndex}
+            length={filteredPlanets.length}
+          />
         </>
+      )}
+      </>
       )}
 
       <ChatShell />

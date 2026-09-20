@@ -1,8 +1,7 @@
 import { useMemo } from 'react'
 
-// Per-entity intro copy. Only Exoplanets exists today; future entities
-// (Constellations, etc.) just add an entry here — the component below stays
-// entity-agnostic.
+// Per-entity intro copy. Future entities (Galaxies, Black Holes, etc.) just
+// add an entry here — the component below stays entity-agnostic.
 const ENTITY_CONTENT = {
   Exoplanets: {
     title: 'Exoplanets',
@@ -11,6 +10,15 @@ const ENTITY_CONTENT = {
       'That changed in 1995, when astronomers in France caught a glimpse of the first exoplanet: '+
       'a planet within the Milky Way orbiting a sun-like star other than our own. Since then, over sixty-three ' +
       'hundred planets have been added to the Exoplanet Archive at NASA. Cosmidex focuses on those that may be capable of hosting life . . .',
+  },
+  Universe: {
+    title: 'The Universe',
+    description:
+      'Around 13.8 billion years ago, the universe expanded faster than the speed of light for a fraction ' +
+      'of a second — a period cosmologists call cosmic inflation. What followed was the Big Bang, then hundreds ' +
+      'of millions of years of darkness before the first stars ignited, collected into the first galaxies, and lit ' +
+      'the cosmos as we see it today. The universe is still expanding, and that expansion is speeding up — driven ' +
+      'by a mysterious force scientists call dark energy. Here are the entities that make up our Universe . . .',
   },
 }
 
@@ -81,25 +89,46 @@ export default function EntityOverview({ entity, planets, listLoading }) {
         <p className="entity-overview-description">{content.description}</p>
 
         <div className="entity-overview-stats">
-          <div className="entity-overview-stat">
-            <span className="entity-overview-stat-value">6,324</span>
-            <span className="entity-overview-stat-label">Confirmed Exoplanets</span>
-          </div>
-          <div className="entity-overview-stat">
-            <span className="entity-overview-stat-value">75</span>
-            <span className="entity-overview-stat-label">Potentially Habitable Worlds</span>
-          </div>
-          {listLoading && !stats && (
-            <div className="entity-overview-stat">
-              <span className="entity-overview-stat-label">Loading stats…</span>
-            </div>
-          )}
-          {stats && (
+          {entity === 'Universe' ? (
             <>
               <div className="entity-overview-stat">
-                <span className="entity-overview-stat-value">{stats.tier1}</span>
-                <span className="entity-overview-stat-label">Tier 1 Candidates</span>
+                <span className="entity-overview-stat-value">~2 Trillion</span>
+                <span className="entity-overview-stat-label">Galaxies</span>
               </div>
+              <div className="entity-overview-stat">
+                <span className="entity-overview-stat-value">68%</span>
+                <span className="entity-overview-stat-label">Dark Energy</span>
+              </div>
+              <div className="entity-overview-stat">
+                <span className="entity-overview-stat-value">27%</span>
+                <span className="entity-overview-stat-label">Dark Matter</span>
+              </div>
+              <div className="entity-overview-stat">
+                <span className="entity-overview-stat-value">5%</span>
+                <span className="entity-overview-stat-label">Ordinary Matter</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="entity-overview-stat">
+                <span className="entity-overview-stat-value">6,324</span>
+                <span className="entity-overview-stat-label">Confirmed Exoplanets</span>
+              </div>
+              <div className="entity-overview-stat">
+                <span className="entity-overview-stat-value">75</span>
+                <span className="entity-overview-stat-label">Potentially Habitable Worlds</span>
+              </div>
+              {listLoading && !stats && (
+                <div className="entity-overview-stat">
+                  <span className="entity-overview-stat-label">Loading stats…</span>
+                </div>
+              )}
+              {stats && (
+                <div className="entity-overview-stat">
+                  <span className="entity-overview-stat-value">{stats.tier1}</span>
+                  <span className="entity-overview-stat-label">Tier 1 Candidates</span>
+                </div>
+              )}
             </>
           )}
         </div>

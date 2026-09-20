@@ -45,8 +45,15 @@ body {
   color: #4a9eff;
   text-shadow: 0 0 8px rgba(74, 158, 255, 0.6);
   letter-spacing: 0.1em;
+  display: flex;
   align-items: center;
+  gap: 0.4rem;
   flex-shrink: 0;
+}
+
+.header-logo {
+  height: 1.5em;
+  width: auto;
 }
 
 .header-link-group {
@@ -280,6 +287,61 @@ body {
   font-style: italic;
   text-shadow: 0 0 4px rgba(0, 0, 0, 0.9);
   pointer-events: none;
+}
+
+.universe-concept-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2rem;
+  width: 100%;
+  max-width: 420px;
+}
+
+.composition-bar {
+  display: flex;
+  width: 100%;
+  height: 28px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid #2e2e4e;
+}
+
+.composition-segment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s, flex-grow 0.2s;
+}
+
+.composition-segment.dimmed {
+  opacity: 0.25;
+}
+
+.composition-segment.active {
+  opacity: 1;
+  box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.3);
+}
+
+.composition-segment-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #12121a;
+  text-shadow: none;
+}
+
+.universe-concept-percent {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-top: 1rem;
+  text-shadow: 0 0 16px currentColor;
+}
+
+.universe-concept-name {
+  font-size: 1.2rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 
 .planet-image-backdrop {
