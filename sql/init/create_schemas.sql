@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS raw.pipeline_state (
     pipeline_name VARCHAR PRIMARY KEY,
     last_file_hash VARCHAR,
     last_run_timestamp TIMESTAMP,
-    last_planet_count INT
+    last_record_count INT
 );
 
 CREATE TABLE IF NOT EXISTS raw.pipeline_audit (
@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS raw.pipeline_audit (
     run_timestamp TIMESTAMP DEFAULT now(),
     changed BOOLEAN NOT NULL,
     loaded BOOLEAN NOT NULL,
-    planet_count INT,
-    new_planet_count INT,
-    new_planets TEXT []
+    record_count INT,
+    new_record_count INT,
+    new_records TEXT []
 );
