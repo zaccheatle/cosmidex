@@ -1,0 +1,17 @@
+name: Frontend CI
+on: 
+    pull_request:
+        paths: 
+            - cosmidex_frontend/**
+jobs:
+    lint:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with:
+                node-version: "20"
+            - run: "npm ci"
+              working-directory: cosmidex_frontend/
+            - run: "npm run lint"
+              working-directory: cosmidex_frontend/
