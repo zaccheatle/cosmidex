@@ -22,7 +22,7 @@ export default function LandingPage({ onEnter, onShowAbout }) {
         <p className="landing-tagline">A Codex for the Cosmos</p>
 
         <p className="landing-intro">
-          An interactive explorer of cosmic entities across the universe.
+          An interactive catalog of cosmic entities across the universe.
         </p>
 
         <div className="landing-stats">
